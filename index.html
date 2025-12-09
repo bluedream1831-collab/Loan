@@ -8,6 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- 新增：SheetJS 用於匯出 Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
     
@@ -38,6 +41,11 @@
         /* 元件樣式 */
         .btn-warm { background-color: #D97706; color: white; padding: 0.75rem 1.25rem; border-radius: 9999px; transition: all 0.3s; box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.2); font-weight: bold; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
         .btn-warm:active { transform: scale(0.95); background-color: #B45309; }
+        
+        /* Excel 按鈕專用樣式 */
+        .btn-excel { background-color: #10B981; color: white; padding: 0.5rem 1rem; border-radius: 9999px; transition: all 0.2s; white-space: nowrap; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;}
+        .btn-excel:hover { background-color: #059669; }
+
         .btn-soft { background-color: #FFF; border: 2px solid #E6DCC9; color: #8C7051; padding: 0.5rem 1rem; border-radius: 9999px; transition: all 0.2s; white-space: nowrap; }
         .btn-soft:active, .btn-soft.active { background-color: #F5EFE6; border-color: #B89F7D; color: #5D4037; font-weight: bold; }
         .input-warm { background-color: #FFF; border: 1px solid #E6DCC9; border-radius: 0.75rem; padding: 0.75rem; width: 100%; color: #5D4037; font-size: 16px; }
@@ -80,9 +88,11 @@
         <!-- 工具列 -->
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-warm-100 no-print">
             <div class="flex flex-col sm:flex-row gap-3 justify-between items-center">
-                <div class="flex gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                <div class="flex gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 items-center">
                     <button onclick="document.getElementById('importFile').click()" class="btn-soft text-sm"><i class="fas fa-file-import"></i> 讀取</button>
                     <button onclick="exportData()" class="btn-soft text-sm"><i class="fas fa-file-export"></i> 備份</button>
+                    <!-- 新增：匯出 Excel 按鈕 -->
+                    <button onclick="exportToExcel()" class="btn-excel text-sm"><i class="fas fa-file-excel"></i> 匯出 Excel</button>
                     <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(this)">
                 </div>
                 <div class="flex gap-2 w-full sm:w-auto">
@@ -248,6 +258,7 @@
                 <p><strong>1. 雙房貸設計</strong>：房貸A(主約)與房貸B(增貸)可分開輸入，適合轉增貸或二胎規劃。</p>
                 <p><strong>2. 提前還款</strong>：兩筆房貸皆可獨立設定提前還款，建議優先償還利率高的。</p>
                 <p><strong>3. 負債比警示</strong>：超過 60% DTI 會有紅色提醒。</p>
+                <p><strong>4. 匯出功能</strong>：支援將試算結果匯出為 Excel 檔案，方便記帳。</p>
             </div>
         </div>
     </div>
@@ -508,6 +519,80 @@
         function generateShareCard() { window.scrollTo(0, 0); const card = document.getElementById('share-card-canvas'); html2canvas(card, { scale: 1 }).then(canvas => { const link = document.createElement('a'); link.download = 'WUCJ_Finance_Plan.png'; link.href = canvas.toDataURL(); link.click(); }); }
         function exportData() { const raw = localStorage.getItem('wucj_loan_data_v2'); if(!raw) { alert('尚無資料可儲存'); return; } const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([raw], {type: "application/json"})); a.download = "loan_backup_wucj.json"; a.click(); }
         function importData(input) { const file = input.files[0]; if(!file) return; const r = new FileReader(); r.onload = (e) => { localStorage.setItem('wucj_loan_data_v2', e.target.result); loadFromLocal(); calculateAll(); alert('讀取成功！'); }; r.readAsText(file); }
+
+        // --- EXCEL 匯出功能 ---
+        function exportToExcel() {
+            // 1. 重新抓取並計算數據 (確保數據最新)
+             const inputs = {
+                h: { amt: +document.getElementById('h-amt').value, rate: +document.getElementById('h-rate').value, yr: +document.getElementById('h-year').value, grace: +document.getElementById('h-grace').value },
+                h2: { amt: +document.getElementById('h2-amt').value, rate: +document.getElementById('h2-rate').value, yr: +document.getElementById('h2-year').value, grace: +document.getElementById('h2-grace').value },
+                pre: { yr: +document.getElementById('h-pre-yr').value, amt: +document.getElementById('h-pre-amt').value },
+                pre2: { yr: +document.getElementById('h2-pre-yr').value, amt: +document.getElementById('h2-pre-amt').value },
+                p: { amt: +document.getElementById('p-amt').value, rate: +document.getElementById('p-rate').value, yr: +document.getElementById('p-year').value },
+                c: { amt: +document.getElementById('c-amt').value, rate: +document.getElementById('c-rate').value, yr: +document.getElementById('c-year').value },
+                income: +document.getElementById('income').value,
+                startMonth: document.getElementById('start-month').value
+            };
+
+            const sH = new Loan(inputs.h.amt, inputs.h.rate, inputs.h.yr, inputs.h.grace, {year: inputs.pre.yr, amt: inputs.pre.amt}).getSchedule();
+            const sH2 = new Loan(inputs.h2.amt, inputs.h2.rate, inputs.h2.yr, inputs.h2.grace, {year: inputs.pre2.yr, amt: inputs.pre2.amt}).getSchedule();
+            const sP = new Loan(inputs.p.amt, inputs.p.rate, inputs.p.yr).getSchedule();
+            const sC = new Loan(inputs.c.amt, inputs.c.rate, inputs.c.yr).getSchedule();
+
+            const maxMonths = Math.max(sH.length, sH2.length, sP.length, sC.length);
+            let combined = [];
+            let [startYear, startM] = inputs.startMonth.split('-').map(Number);
+            startM -= 1;
+
+            // 2. 準備明細數據
+            for (let i = 0; i < maxMonths; i++) {
+                const h = sH[i] || { payment: 0, interest: 0, principal: 0, balance: 0, isExtra: false };
+                const h2 = sH2[i] || { payment: 0, interest: 0, principal: 0, balance: 0, isExtra: false };
+                const p = sP[i] || { payment: 0, interest: 0, principal: 0, balance: 0 };
+                const c = sC[i] || { payment: 0, interest: 0, principal: 0, balance: 0 };
+
+                let currentD = new Date(startYear, startM + i, 1);
+                let dateStr = `${currentD.getFullYear()}/${(currentD.getMonth() + 1).toString().padStart(2, '0')}`;
+                let rowPay = h.payment + h2.payment + p.payment + c.payment;
+                let rowInt = h.interest + h2.interest + p.interest + c.interest;
+                let rowPrin = h.principal + h2.principal + p.principal + c.principal;
+                let rowBal = h.balance + h2.balance + p.balance + c.balance;
+
+                combined.push({
+                    idx: i+1,
+                    date: dateStr,
+                    payment: Math.round(rowPay),
+                    interest: Math.round(rowInt),
+                    principal: Math.round(rowPrin),
+                    balance: Math.round(rowBal),
+                    note: (h.isExtra || h2.isExtra) ? "含提前還款" : ""
+                });
+            }
+
+            // 3. 建立 Excel 內容
+            // (A) 參數表
+            const summaryData = [
+                ["項目", "金額 (萬)", "年利率 (%)", "期限 (年)", "寬限期 (年)"],
+                ["房貸 A (主約)", inputs.h.amt, inputs.h.rate, inputs.h.yr, inputs.h.grace],
+                ["房貸 B (增貸)", inputs.h2.amt, inputs.h2.rate, inputs.h2.yr, inputs.h2.grace],
+                ["信用貸款", inputs.p.amt, inputs.p.rate, inputs.p.yr, "-"],
+                ["汽車貸款", inputs.c.amt, inputs.c.rate, inputs.c.yr, "-"],
+                ["", "", "", "", ""], // 空行
+                ["開始月份", inputs.startMonth, "", "", ""],
+                ["月收入", inputs.income, "", "", ""]
+            ];
+
+            // (B) 明細表
+            const detailHeader = ["期數", "日期", "本月總支出", "總利息", "總本金", "剩餘總本金", "備註"];
+            const detailData = combined.map(r => [r.idx, r.date, r.payment, r.interest, r.principal, r.balance, r.note]);
+            const finalData = [...summaryData, [], ["還款明細表"], detailHeader, ...detailData];
+
+            // 4. 產生檔案
+            const ws = XLSX.utils.aoa_to_sheet(finalData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "貸款試算");
+            XLSX.writeFile(wb, "WUCJ_貸款試算結果.xlsx");
+        }
 
         document.querySelectorAll('input').forEach(el => el.addEventListener('input', calculateAll));
         window.onload = function() { loadFromLocal(); calculateAll(); }

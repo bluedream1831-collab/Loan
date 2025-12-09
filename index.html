@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>綜合貸款計算器 (房貸/信貸/車貸)</title>
+    <!-- 引入 Tailwind CSS 進行快速排版 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Chart.js 進行圖表繪製 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f3f4f6; }
+        .input-group label { display: block; font-size: 0.875rem; color: #4b5563; margin-bottom: 0.25rem; }
+        .input-group input { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; }
+        .result-card { transition: all 0.3s; }
+        .result-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="p-6">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-800">全方位貸款支出計算器</h1>
+            <p class="text-gray-500 mt-2">整合房貸、信貸、車貸，一鍵計算每月現金流壓力</p>
+        </header>
+
+        <!-- 主要內容區：左側輸入，右側總結 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- 左側：輸入區塊 -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- 房貸區塊 -->
+                <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="bg-blue-100 text-blue-600 p-2 rounded-full mr-2">🏠</span> 房屋貸款
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="input-group">
+                            <label>貸款金額 (萬元)</label>
+                            <input type="number" id="house-amount" value="1000" oninput="calculate()">
+                        </div>
+                        <div class="input-group">
+                            <label>年利率 (%)</label>
+                            <input type="number" id="house-rate" value="2.1" step="0.01" oninput="calculate()">
+                        </div>
+                        <div class="input-group">
+                            <label>貸款期限 (年)</label>
+                            <input type="number" id="house-years" value="30" oninput="calculate()">
+                        </div>
+                    </div>
+                    <div class="mt-3 text-sm text-blue-600 font-semibold" id="house-result">每月: $0</div>
+                </div>
+
+                <!-- 信貸區塊 -->
+                <div class="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="bg-green-100 text-green-600 p-2 rounded-full mr-2">💳</span> 信用貸款
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="input-group">
+                            <label>貸款金額 (萬元)</label>
+                            <input type="number" id="personal-amount" value="0" oninput="calculate()">
+                        </div>
+                        <div class="input-group">
+                            <label>年利率 (%)</label>
+                            <input type="number" id="personal-rate" value="3.5" step="0.01" oninput="calculate()">
+                        </div>
+                        <div class="input-group">
+                            <label>貸款期限 (年)</label>
+                            <input type="number" id="personal-years" value="7" oninput="calculate()">
+                        </div>
+                    </div>
+                    <div class="mt-3 text-sm text-green-600 font-semibold" id="personal-result">每月: $0</div>
+                </div>
+
+                <!-- 車貸區塊 -->
+                <div class="bg-white p-6 rounded-lg shadow border-l-4 border-orange-500">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="bg-orange-100 text-orange-600 p-2 rounded-full mr-2">🚗</span> 汽車貸款
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="input-group">
+                            <label>貸款金額 (萬元)</label>
+                            <input type="number" id="car-amount" value="0" oninput="calculate()">
+                        </div>
+                        <div class="input-group">
+                            <label>年利率 (%)</label>
+                            <input type="number" id="car-rate" value="4.0" step="0.01" oninput="calculate()">
+                        </div>
+                        <div class="input-group">
+                            <label>貸款期限 (年)</label>
+                            <input type="number" id="car-years" value="5" oninput="calculate()">
+                        </div>
+                    </div>
+                    <div class="mt-3 text-sm text-orange-600 font-semibold" id="car-result">每月: $0</div>
+                </div>
+            </div>
+
+            <!-- 右側：總結儀表板 -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- 結果卡片 -->
+                <div class="bg-gray-800 text-white p-6 rounded-lg shadow-lg result-card">
+                    <h3 class="text-lg font-semibold text-gray-300 mb-2">每月總現金支出</h3>
+                    <div class="text-4xl font-bold text-yellow-400" id="total-monthly">$0</div>
+                    <div class="mt-4 border-t border-gray-600 pt-4">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-gray-400">每年總支出</span>
+                            <span class="font-bold" id="total-yearly">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">總利息支出 (預估)</span>
+                            <span class="font-bold text-red-300" id="total-interest">$0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 圖表區 -->
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <h4 class="text-center font-bold text-gray-700 mb-2">每月還款佔比</h4>
+                    <canvas id="loanChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let loanChart;
+
+        // 初始化圖表
+        function initChart() {
+            const ctx = document.getElementById('loanChart').getContext('2d');
+            loanChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['房貸', '信貸', '車貸'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: ['#3b82f6', '#22c55e', '#f97316'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // PMT 公式：本息平均攤還
+        // P: 貸款總額, r: 月利率, n: 總期數(月)
+        function calculatePMT(P, annualRate, years) {
+            if (P <= 0 || years <= 0) return { monthly: 0, total: 0, interest: 0 };
+            
+            let r = (annualRate / 100) / 12; // 月利率
+            let n = years * 12; // 總月數
+
+            // 如果利率為 0
+            if (r === 0) {
+                let monthly = (P * 10000) / n;
+                return {
+                    monthly: monthly,
+                    total: P * 10000,
+                    interest: 0
+                };
+            }
+
+            let monthlyPayment = (P * 10000 * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+            let totalPayment = monthlyPayment * n;
+            let totalInterest = totalPayment - (P * 10000);
+
+            return {
+                monthly: monthlyPayment,
+                total: totalPayment,
+                interest: totalInterest
+            };
+        }
+
+        function formatMoney(num) {
+            return '$' + Math.round(num).toLocaleString();
+        }
+
+        function calculate() {
+            // 取得輸入值
+            const hAmount = parseFloat(document.getElementById('house-amount').value) || 0;
+            const hRate = parseFloat(document.getElementById('house-rate').value) || 0;
+            const hYears = parseFloat(document.getElementById('house-years').value) || 0;
+
+            const pAmount = parseFloat(document.getElementById('personal-amount').value) || 0;
+            const pRate = parseFloat(document.getElementById('personal-rate').value) || 0;
+            const pYears = parseFloat(document.getElementById('personal-years').value) || 0;
+
+            const cAmount = parseFloat(document.getElementById('car-amount').value) || 0;
+            const cRate = parseFloat(document.getElementById('car-rate').value) || 0;
+            const cYears = parseFloat(document.getElementById('car-years').value) || 0;
+
+            // 計算個別貸款
+            const house = calculatePMT(hAmount, hRate, hYears);
+            const personal = calculatePMT(pAmount, pRate, pYears);
+            const car = calculatePMT(cAmount, cRate, cYears);
+
+            // 更新個別顯示
+            document.getElementById('house-result').innerText = `每月攤還: ${formatMoney(house.monthly)} | 總利息: ${formatMoney(house.interest)}`;
+            document.getElementById('personal-result').innerText = `每月攤還: ${formatMoney(personal.monthly)} | 總利息: ${formatMoney(personal.interest)}`;
+            document.getElementById('car-result').innerText = `每月攤還: ${formatMoney(car.monthly)} | 總利息: ${formatMoney(car.interest)}`;
+
+            // 計算總和
+            const totalMonthly = house.monthly + personal.monthly + car.monthly;
+            const totalYearly = totalMonthly * 12;
+            const totalInterestAll = house.interest + personal.interest + car.interest;
+
+            // 更新總結儀表板
+            document.getElementById('total-monthly').innerText = formatMoney(totalMonthly);
+            document.getElementById('total-yearly').innerText = formatMoney(totalYearly);
+            document.getElementById('total-interest').innerText = formatMoney(totalInterestAll);
+
+            // 更新圖表
+            if (loanChart) {
+                loanChart.data.datasets[0].data = [house.monthly, personal.monthly, car.monthly];
+                
+                // 如果全部都是0，顯示一個灰色的圈圈避免圖表消失（選擇性）
+                if (totalMonthly === 0) {
+                   // loanChart.data.datasets[0].data = [1, 1, 1]; // 僅作示意，實際可隱藏
+                }
+                loanChart.update();
+            }
+        }
+
+        // 頁面加載後初始化
+        window.onload = function() {
+            initChart();
+            calculate();
+        };
+
+    </script>
+</body>
+</html>

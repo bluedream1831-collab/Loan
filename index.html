@@ -83,9 +83,10 @@
         <!-- 工具列 (RWD: 手機版自動換行) -->
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-warm-100 no-print">
             <div class="flex flex-col sm:flex-row gap-3 justify-between items-center">
+                <!-- 更新圖示：匯入/匯出 -->
                 <div class="flex gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-                    <button onclick="document.getElementById('importFile').click()" class="btn-soft text-sm"><i class="fas fa-folder-open"></i> 讀取</button>
-                    <button onclick="exportData()" class="btn-soft text-sm"><i class="fas fa-download"></i> 備份</button>
+                    <button onclick="document.getElementById('importFile').click()" class="btn-soft text-sm"><i class="fas fa-file-import"></i> 讀取</button>
+                    <button onclick="exportData()" class="btn-soft text-sm"><i class="fas fa-file-export"></i> 備份</button>
                     <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(this)">
                 </div>
                 <div class="flex gap-2 w-full sm:w-auto">
@@ -175,7 +176,8 @@
                     <input type="number" id="income" class="input-warm mt-1" value="60000">
                 </div>
                 <div class="w-full md:w-1/3 bg-white p-3 rounded-xl border border-warm-100 shadow-sm">
-                    <div id="dti-msg" class="hidden text-rose-600 text-sm font-bold flex items-center"><i class="fas fa-exclamation-triangle mr-2 text-xl"></i> <div>負債比過高 (>60%)<br><span class="text-[10px] font-normal">建議至 WUCJ 部落格查看優化建議</span></div></div>
+                    <!-- 移除建議文字，僅保留警示 -->
+                    <div id="dti-msg" class="hidden text-rose-600 text-sm font-bold flex items-center"><i class="fas fa-exclamation-triangle mr-2 text-xl"></i> <div>負債比過高 (>60%)</div></div>
                     <div id="dti-ok" class="hidden text-green-700 text-sm font-bold flex items-center"><i class="fas fa-check-circle mr-2 text-xl"></i> 財務狀況健康</div>
                 </div>
             </div>

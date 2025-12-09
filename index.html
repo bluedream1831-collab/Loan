@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>溫馨理財｜全方位貸款計算機 - WUCJ</title>
+    <title>溫馨理財｜雙房貸試算計算機 - WUCJ</title>
     <!-- 核心套件 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -19,11 +19,14 @@
                     colors: {
                         cream: '#FFFBF5',
                         warm: { 50: '#FAF7F2', 100: '#F5EFE6', 200: '#E6DCC9', 500: '#B89F7D', 600: '#8C7051', 800: '#5D4037' },
-                        accent: { house: '#D97706', credit: '#65A30D', car: '#EA580C' }
+                        accent: { 
+                            house1: '#D97706', // 房貸A (琥珀)
+                            house2: '#9333EA', // 房貸B (紫色-增貸)
+                            credit: '#65A30D', // 信貸 (綠色)
+                            car: '#EA580C'     // 車貸 (橘色)
+                        }
                     },
-                    screens: {
-                        'print': {'raw': 'print'},
-                    }
+                    screens: { 'print': {'raw': 'print'} }
                 }
             }
         }
@@ -32,30 +35,18 @@
     <style>
         body { background-color: #FFFBF5; color: #5D4037; -webkit-tap-highlight-color: transparent; }
         
-        /* 手機優化：按鈕觸控區加大 */
+        /* 元件樣式 */
         .btn-warm { background-color: #D97706; color: white; padding: 0.75rem 1.25rem; border-radius: 9999px; transition: all 0.3s; box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.2); font-weight: bold; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
         .btn-warm:active { transform: scale(0.95); background-color: #B45309; }
-        
         .btn-soft { background-color: #FFF; border: 2px solid #E6DCC9; color: #8C7051; padding: 0.5rem 1rem; border-radius: 9999px; transition: all 0.2s; white-space: nowrap; }
         .btn-soft:active, .btn-soft.active { background-color: #F5EFE6; border-color: #B89F7D; color: #5D4037; font-weight: bold; }
-        
-        /* 輸入框高度 */
         .input-warm { background-color: #FFF; border: 1px solid #E6DCC9; border-radius: 0.75rem; padding: 0.75rem; width: 100%; color: #5D4037; font-size: 16px; }
         .input-warm:focus { outline: none; border-color: #D97706; ring: 2px solid #FEF3C7; }
-        
         .card-warm { background-color: white; border-radius: 1.25rem; box-shadow: 0 4px 20px -5px rgba(93, 64, 55, 0.08); border: 1px solid #F5EFE6; }
 
-        /* 說明視窗 Modal */
+        /* Modal & Print */
         #help-modal { backdrop-filter: blur(4px); background-color: rgba(93, 64, 55, 0.3); }
-
-        /* 分享卡片樣式 (隱藏生成用) */
-        #share-card-canvas {
-            width: 1080px; height: 1080px; position: fixed; left: -9999px; top: 0; background: #FFFBF5;
-            display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 80px;
-            font-family: "Zen Maru Gothic", sans-serif;
-        }
-
-        /* 列印設定 */
+        #share-card-canvas { width: 1080px; height: 1080px; position: fixed; left: -9999px; top: 0; background: #FFFBF5; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 80px; fontFamily: "Zen Maru Gothic", sans-serif; }
         @media print {
             body { background-color: white; color: black; }
             .no-print { display: none !important; }
@@ -73,24 +64,14 @@
         <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
             <div class="flex items-center gap-3">
                 <div class="bg-orange-100 p-2 rounded-full text-2xl shadow-sm">🏡</div>
-                <h1 class="text-2xl font-bold text-warm-800 tracking-wider">貸款計算機</h1>
+                <h1 class="text-2xl font-bold text-warm-800 tracking-wider">雙房貸計算機</h1>
             </div>
-            <!-- 使用說明按鈕 (手機版顯示在標題旁) -->
-            <button onclick="toggleHelp()" class="sm:hidden text-warm-600 bg-white border border-warm-200 px-3 py-1 rounded-full text-sm font-bold shadow-sm">
-                <i class="fas fa-book-open"></i> 說明
-            </button>
+            <button onclick="toggleHelp()" class="sm:hidden text-warm-600 bg-white border border-warm-200 px-3 py-1 rounded-full text-sm font-bold shadow-sm"><i class="fas fa-book-open"></i> 說明</button>
         </div>
-        
         <div class="flex items-center gap-3">
             <span id="auto-save-toast" class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full opacity-0 transition-opacity"><i class="fas fa-check"></i> 已自動儲存</span>
-            <!-- 使用說明按鈕 (電腦版) -->
-            <button onclick="toggleHelp()" class="hidden sm:flex items-center gap-2 text-warm-600 bg-white border border-warm-200 px-3 py-1 rounded-full text-sm font-bold shadow-sm hover:bg-warm-50 transition">
-                <i class="fas fa-book-open"></i> 使用說明
-            </button>
-            <a href="https://vocus.cc/user/@WUCJ" target="_blank" class="flex items-center gap-2 text-warm-600 hover:text-accent-house transition font-medium bg-white px-4 py-2 rounded-full shadow-sm border border-warm-100">
-                <img src="https://ui-avatars.com/api/?name=WUCJ&background=B45309&color=fff" class="w-6 h-6 rounded-full">
-                <span>追蹤 WUCJ</span>
-            </a>
+            <button onclick="toggleHelp()" class="hidden sm:flex items-center gap-2 text-warm-600 bg-white border border-warm-200 px-3 py-1 rounded-full text-sm font-bold shadow-sm hover:bg-warm-50 transition"><i class="fas fa-book-open"></i> 使用說明</button>
+            <a href="https://vocus.cc/user/@WUCJ" target="_blank" class="flex items-center gap-2 text-warm-600 hover:text-accent-house1 transition font-medium bg-white px-4 py-2 rounded-full shadow-sm border border-warm-100"><img src="https://ui-avatars.com/api/?name=WUCJ&background=B45309&color=fff" class="w-6 h-6 rounded-full"><span>追蹤 WUCJ</span></a>
         </div>
     </nav>
 
@@ -105,56 +86,78 @@
                     <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(this)">
                 </div>
                 <div class="flex gap-2 w-full sm:w-auto">
-                    <button onclick="generateShareCard()" class="btn-warm flex-1 sm:flex-none text-sm bg-gradient-to-r from-purple-500 to-pink-500 border-none">
-                        <i class="fab fa-instagram"></i> 生成分享卡
-                    </button>
-                    <button onclick="window.print()" class="btn-warm flex-1 sm:flex-none text-sm">
-                        <i class="fas fa-print"></i> 列印 / PDF
-                    </button>
+                    <button onclick="generateShareCard()" class="btn-warm flex-1 sm:flex-none text-sm bg-gradient-to-r from-purple-500 to-pink-500 border-none"><i class="fab fa-instagram"></i> 生成分享卡</button>
+                    <button onclick="window.print()" class="btn-warm flex-1 sm:flex-none text-sm"><i class="fas fa-print"></i> 列印 / PDF</button>
                 </div>
             </div>
         </div>
 
         <!-- 列印標頭 -->
         <div class="hidden print-only text-center mb-8 border-b-2 border-warm-200 pb-4">
-            <h1 class="text-3xl font-bold text-warm-800">個人財務貸款試算報告</h1>
+            <h1 class="text-3xl font-bold text-warm-800">個人財務貸款試算報告 (轉增貸版)</h1>
             <p class="text-warm-600 mt-1">Generated by WUCJ 貸款計算機</p>
         </div>
 
-        <!-- 輸入區塊 -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 no-print">
+        <!-- 輸入區塊 (2x2 佈局) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 no-print">
             
-            <!-- 房貸 (含提前還款功能) -->
+            <!-- 房貸 A (主貸款) -->
             <div class="card-warm p-5 border-t-4 border-amber-500 relative overflow-hidden">
-                <div class="absolute -right-4 -top-4 text-amber-50 opacity-50 text-9xl pointer-events-none rotate-12"><i class="fas fa-home"></i></div>
-                <h3 class="font-bold text-lg mb-4 text-warm-800 flex items-center"><span class="w-2 h-6 bg-amber-500 rounded-full mr-2"></span>房屋貸款</h3>
+                <div class="absolute -right-4 -top-4 text-amber-50 opacity-20 text-9xl pointer-events-none rotate-12"><i class="fas fa-home"></i></div>
+                <h3 class="font-bold text-lg mb-4 text-warm-800 flex items-center"><span class="w-2 h-6 bg-amber-500 rounded-full mr-2"></span>房貸 A (主約)</h3>
                 <div class="space-y-4 relative z-10">
                     <div><label class="text-xs text-warm-600 ml-1">貸款金額 (萬元)</label><input type="number" id="h-amt" class="input-warm" value="1000"></div>
                     <div class="flex gap-3">
                         <div class="w-1/2"><label class="text-xs text-warm-600 ml-1">年利率 (%)</label><input type="number" id="h-rate" class="input-warm" value="2.1" step="0.01"></div>
                         <div class="w-1/2"><label class="text-xs text-warm-600 ml-1">期限 (年)</label><input type="number" id="h-year" class="input-warm" value="30"></div>
                     </div>
-                    <!-- 進階：提前還款 -->
+                    <!-- 提前還款 A -->
                     <div class="bg-amber-50 p-3 rounded-xl border border-amber-100">
-                        <div class="flex items-center justify-between mb-2 cursor-pointer" onclick="togglePrepay()">
-                            <label class="text-xs font-bold text-amber-800 flex items-center"><i class="fas fa-piggy-bank mr-1"></i> 提前還款試算</label>
-                            <i class="fas fa-chevron-down text-amber-800 text-xs" id="prepay-icon"></i>
+                        <div class="flex items-center justify-between mb-2 cursor-pointer" onclick="togglePrepay('a')">
+                            <label class="text-xs font-bold text-amber-800 flex items-center"><i class="fas fa-piggy-bank mr-1"></i> A 提前還款試算</label>
+                            <i class="fas fa-chevron-down text-amber-800 text-xs" id="prepay-icon-a"></i>
                         </div>
-                        <div id="prepay-box" class="hidden space-y-3">
+                        <div id="prepay-box-a" class="hidden space-y-3">
                             <div class="flex gap-3">
-                                <div class="w-1/2"><label class="text-[10px] text-amber-700">第幾年還款</label><input type="number" id="h-pre-yr" class="input-warm text-sm p-2" placeholder="例如 5"></div>
-                                <div class="w-1/2"><label class="text-[10px] text-amber-700">額外還款(萬)</label><input type="number" id="h-pre-amt" class="input-warm text-sm p-2" placeholder="例如 100"></div>
+                                <div class="w-1/2"><label class="text-[10px] text-amber-700">第幾年還</label><input type="number" id="h-pre-yr" class="input-warm text-sm p-2" placeholder="Ex: 5"></div>
+                                <div class="w-1/2"><label class="text-[10px] text-amber-700">金額(萬)</label><input type="number" id="h-pre-amt" class="input-warm text-sm p-2" placeholder="Ex: 50"></div>
                             </div>
-                            <p class="text-[10px] text-amber-600">*試算：還款後月付金降低，年限不變</p>
                         </div>
                     </div>
                     <div><label class="text-xs text-warm-600 ml-1">寬限期 (年)</label><input type="number" id="h-grace" class="input-warm bg-orange-50" value="0"></div>
                 </div>
             </div>
 
-            <!-- 信貸 (預設 0) -->
+            <!-- 房貸 B (增貸/二胎) -->
+            <div class="card-warm p-5 border-t-4 border-purple-500 relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 text-purple-50 opacity-20 text-9xl pointer-events-none rotate-12"><i class="fas fa-building"></i></div>
+                <h3 class="font-bold text-lg mb-4 text-warm-800 flex items-center"><span class="w-2 h-6 bg-purple-500 rounded-full mr-2"></span>房貸 B (增貸/二胎)</h3>
+                <div class="space-y-4 relative z-10">
+                    <div><label class="text-xs text-warm-600 ml-1">貸款金額 (萬元)</label><input type="number" id="h2-amt" class="input-warm" value="0"></div>
+                    <div class="flex gap-3">
+                        <div class="w-1/2"><label class="text-xs text-warm-600 ml-1">年利率 (%)</label><input type="number" id="h2-rate" class="input-warm" value="2.5" step="0.01"></div>
+                        <div class="w-1/2"><label class="text-xs text-warm-600 ml-1">期限 (年)</label><input type="number" id="h2-year" class="input-warm" value="20"></div>
+                    </div>
+                    <!-- 提前還款 B -->
+                    <div class="bg-purple-50 p-3 rounded-xl border border-purple-100">
+                        <div class="flex items-center justify-between mb-2 cursor-pointer" onclick="togglePrepay('b')">
+                            <label class="text-xs font-bold text-purple-800 flex items-center"><i class="fas fa-piggy-bank mr-1"></i> B 提前還款試算</label>
+                            <i class="fas fa-chevron-down text-purple-800 text-xs" id="prepay-icon-b"></i>
+                        </div>
+                        <div id="prepay-box-b" class="hidden space-y-3">
+                            <div class="flex gap-3">
+                                <div class="w-1/2"><label class="text-[10px] text-purple-700">第幾年還</label><input type="number" id="h2-pre-yr" class="input-warm text-sm p-2" placeholder="Ex: 3"></div>
+                                <div class="w-1/2"><label class="text-[10px] text-purple-700">金額(萬)</label><input type="number" id="h2-pre-amt" class="input-warm text-sm p-2" placeholder="Ex: 30"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div><label class="text-xs text-warm-600 ml-1">寬限期 (年)</label><input type="number" id="h2-grace" class="input-warm bg-purple-50" value="0"></div>
+                </div>
+            </div>
+
+            <!-- 信貸 -->
             <div class="card-warm p-5 border-t-4 border-lime-600 relative overflow-hidden">
-                <div class="absolute -right-4 -top-4 text-lime-50 opacity-50 text-9xl pointer-events-none rotate-12"><i class="fas fa-coins"></i></div>
+                <div class="absolute -right-4 -top-4 text-lime-50 opacity-20 text-9xl pointer-events-none rotate-12"><i class="fas fa-coins"></i></div>
                 <h3 class="font-bold text-lg mb-4 text-warm-800 flex items-center"><span class="w-2 h-6 bg-lime-600 rounded-full mr-2"></span>信用貸款</h3>
                 <div class="space-y-4 relative z-10">
                     <div><label class="text-xs text-warm-600 ml-1">貸款金額 (萬元)</label><input type="number" id="p-amt" class="input-warm" value="0"></div>
@@ -165,9 +168,9 @@
                 </div>
             </div>
 
-            <!-- 車貸 (預設 0) -->
+            <!-- 車貸 -->
             <div class="card-warm p-5 border-t-4 border-orange-600 relative overflow-hidden">
-                <div class="absolute -right-4 -top-4 text-orange-50 opacity-50 text-9xl pointer-events-none rotate-12"><i class="fas fa-car-side"></i></div>
+                <div class="absolute -right-4 -top-4 text-orange-50 opacity-20 text-9xl pointer-events-none rotate-12"><i class="fas fa-car-side"></i></div>
                 <h3 class="font-bold text-lg mb-4 text-warm-800 flex items-center"><span class="w-2 h-6 bg-orange-600 rounded-full mr-2"></span>汽車貸款</h3>
                 <div class="space-y-4 relative z-10">
                     <div><label class="text-xs text-warm-600 ml-1">貸款金額 (萬元)</label><input type="number" id="c-amt" class="input-warm" value="0"></div>
@@ -212,7 +215,7 @@
                     <span class="text-xs font-normal bg-orange-100 text-orange-800 px-2 py-1 rounded" id="saving-badge" style="display:none">🎉 提前還款省息中</span>
                 </h4>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center mb-6">
-                    <div class="p-3 bg-orange-50 rounded-xl"><div class="text-xs text-warm-500">首月支出</div><div class="text-lg font-bold text-accent-house" id="res-monthly">$0</div></div>
+                    <div class="p-3 bg-orange-50 rounded-xl"><div class="text-xs text-warm-500">首月支出</div><div class="text-lg font-bold text-accent-house1" id="res-monthly">$0</div></div>
                     <div class="p-3 bg-stone-50 rounded-xl"><div class="text-xs text-warm-500">每年支出</div><div class="text-lg font-bold text-warm-800" id="res-yearly">$0</div></div>
                     <div class="p-3 bg-stone-50 rounded-xl"><div class="text-xs text-warm-500">總利息</div><div class="text-lg font-bold text-warm-600" id="res-interest">$0</div></div>
                     <div class="p-3 bg-lime-50 rounded-xl"><div class="text-xs text-warm-500">負債比</div><div class="text-lg font-bold text-accent-credit" id="res-dti">0%</div></div>
@@ -228,47 +231,28 @@
         <footer class="text-center text-warm-500 text-sm py-8 print-only-footer">
             <p class="mb-2">理財規劃・貸款試算</p>
             <a href="https://vocus.cc/user/@WUCJ" target="_blank" class="inline-block px-4 py-2 rounded-full bg-white border border-warm-200 hover:bg-warm-50 transition">
-                更多文章請至 <strong class="text-accent-house">WUCJ 的方格子</strong>
+                更多文章請至 <strong class="text-accent-house1">WUCJ 的方格子</strong>
             </a>
             <p class="text-xs mt-4 opacity-60">計算結果僅供參考，實際以銀行為準。</p>
         </footer>
     </div>
 
-    <!-- 使用說明 Modal -->
+    <!-- Help Modal -->
     <div id="help-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
             <div class="bg-amber-100 p-4 border-b border-amber-200 flex justify-between items-center">
-                <h3 class="text-lg font-bold text-amber-800"><i class="fas fa-book-reader mr-2"></i>使用教學指南</h3>
-                <button onclick="toggleHelp()" class="text-amber-800 hover:text-amber-600 w-8 h-8 rounded-full bg-white/50 flex items-center justify-center"><i class="fas fa-times"></i></button>
+                <h3 class="text-lg font-bold text-amber-800"><i class="fas fa-book-reader mr-2"></i>使用教學</h3>
+                <button onclick="toggleHelp()" class="text-amber-800 w-8 h-8 rounded-full bg-white/50 flex items-center justify-center"><i class="fas fa-times"></i></button>
             </div>
-            <div class="p-6 overflow-y-auto max-h-[70vh] space-y-6 text-sm text-warm-800">
-                <div class="space-y-2">
-                    <h4 class="font-bold text-accent-house border-l-4 border-accent-house pl-2">Step 1. 輸入貸款資料</h4>
-                    <p>在不同顏色的卡片中輸入房貸、信貸或車貸金額。若無該項貸款，請保持金額為 0。</p>
-                    <ul class="list-disc list-inside text-warm-500 pl-2">
-                        <li>房貸區塊點擊 <span class="text-amber-600 font-bold">🐷 提前還款試算</span>，可模擬額外還本的省息效果。</li>
-                    </ul>
-                </div>
-                <div class="space-y-2">
-                    <h4 class="font-bold text-green-600 border-l-4 border-green-600 pl-2">Step 2. 設定財務基準</h4>
-                    <p>在下方灰色區塊輸入您的「月收入」，系統會自動計算 <span class="font-bold">負債比 (DTI)</span>。若超過 60% 會出現紅色警示，建議重新調整貸款結構。</p>
-                </div>
-                <div class="space-y-2">
-                    <h4 class="font-bold text-blue-600 border-l-4 border-blue-600 pl-2">Step 3. 儲存與分享</h4>
-                    <div class="grid grid-cols-2 gap-2 mt-2">
-                        <div class="bg-gray-50 p-2 rounded border border-gray-200"><i class="fas fa-print mr-1"></i> <strong>列印 / PDF</strong><br><span class="text-xs text-gray-500">生成乾淨報表，無雜訊</span></div>
-                        <div class="bg-gray-50 p-2 rounded border border-gray-200"><i class="fab fa-instagram mr-1"></i> <strong>生成分享卡</strong><br><span class="text-xs text-gray-500">一鍵下載美圖</span></div>
-                    </div>
-                    <p class="text-xs text-gray-400 mt-1">* 系統會自動記憶您輸入的數值，下次開啟網頁無需重填。</p>
-                </div>
-            </div>
-            <div class="p-4 bg-warm-50 text-center border-t border-warm-100">
-                <button onclick="toggleHelp()" class="btn-warm w-full">我學會了，開始試算！</button>
+            <div class="p-6 overflow-y-auto max-h-[70vh] space-y-4 text-sm text-warm-800">
+                <p><strong>1. 雙房貸設計</strong>：房貸A(主約)與房貸B(增貸)可分開輸入，適合轉增貸或二胎規劃。</p>
+                <p><strong>2. 提前還款</strong>：兩筆房貸皆可獨立設定提前還款，建議優先償還利率高的。</p>
+                <p><strong>3. 負債比警示</strong>：超過 60% DTI 會有紅色提醒。</p>
             </div>
         </div>
     </div>
 
-    <!-- 隱藏的 Canvas 模板 (分享卡) -->
+    <!-- Canvas Template -->
     <div id="share-card-canvas">
         <div class="w-full text-center">
             <h1 class="text-6xl font-bold text-warm-800 mb-4">財務自由藍圖</h1>
@@ -276,26 +260,21 @@
         </div>
         <div class="w-full bg-white p-10 rounded-[3rem] shadow-lg border-4 border-warm-100">
             <div class="flex justify-between items-end mb-8 border-b-4 border-warm-100 pb-6">
-                <span class="text-3xl text-warm-500 font-bold">每月現金流支出</span>
-                <span class="text-7xl font-bold text-accent-house" id="card-monthly">$0</span>
+                <span class="text-3xl text-warm-500 font-bold">每月現金流</span>
+                <span class="text-7xl font-bold text-accent-house1" id="card-monthly">$0</span>
             </div>
              <div class="flex justify-between items-end mb-8 border-b-4 border-warm-100 pb-6">
                 <span class="text-3xl text-warm-500 font-bold">預估總利息</span>
                 <span class="text-7xl font-bold text-warm-600" id="card-interest">$0</span>
             </div>
             <div class="flex justify-between items-end">
-                <span class="text-3xl text-warm-500 font-bold">負債比 (DTI)</span>
+                <span class="text-3xl text-warm-500 font-bold">負債比</span>
                 <span class="text-7xl font-bold text-accent-credit" id="card-dti">0%</span>
             </div>
         </div>
         <div class="w-full flex justify-between items-center px-4">
-            <div class="text-left">
-                <p class="text-3xl text-warm-800 font-bold mb-2">理財，是為了更自由的明天。</p>
-                <p class="text-2xl text-warm-500">Designed by WUCJ 貸款計算機</p>
-            </div>
-            <div class="bg-white p-4 rounded-xl shadow-md">
-                <div class="w-32 h-32 bg-warm-200 flex items-center justify-center text-warm-800 font-bold rounded">WUCJ<br>Vocus</div>
-            </div>
+            <div class="text-left"><p class="text-3xl text-warm-800 font-bold">理財，是為了更自由的明天。</p></div>
+            <div class="bg-white p-4 rounded-xl shadow-md"><div class="w-32 h-32 bg-warm-200 flex items-center justify-center text-warm-800 font-bold rounded">WUCJ</div></div>
         </div>
     </div>
 
@@ -353,36 +332,34 @@
             }
         }
 
-        function togglePrepay() {
-            const box = document.getElementById('prepay-box');
-            const icon = document.getElementById('prepay-icon');
+        function togglePrepay(type) {
+            const box = document.getElementById(`prepay-box-${type}`);
+            const icon = document.getElementById(`prepay-icon-${type}`);
             if (box.classList.contains('hidden')) { box.classList.remove('hidden'); icon.classList.remove('fa-chevron-down'); icon.classList.add('fa-chevron-up'); } 
             else { box.classList.add('hidden'); icon.classList.add('fa-chevron-down'); icon.classList.remove('fa-chevron-up'); }
         }
-
-        // 顯示/隱藏說明視窗
-        function toggleHelp() {
-            const modal = document.getElementById('help-modal');
-            modal.classList.toggle('hidden');
-        }
+        function toggleHelp() { document.getElementById('help-modal').classList.toggle('hidden'); }
 
         function calculateAll() {
             const inputs = {
                 h: { amt: +document.getElementById('h-amt').value, rate: +document.getElementById('h-rate').value, yr: +document.getElementById('h-year').value, grace: +document.getElementById('h-grace').value },
+                h2: { amt: +document.getElementById('h2-amt').value, rate: +document.getElementById('h2-rate').value, yr: +document.getElementById('h2-year').value, grace: +document.getElementById('h2-grace').value },
                 pre: { yr: +document.getElementById('h-pre-yr').value, amt: +document.getElementById('h-pre-amt').value },
+                pre2: { yr: +document.getElementById('h2-pre-yr').value, amt: +document.getElementById('h2-pre-amt').value },
                 p: { amt: +document.getElementById('p-amt').value, rate: +document.getElementById('p-rate').value, yr: +document.getElementById('p-year').value },
                 c: { amt: +document.getElementById('c-amt').value, rate: +document.getElementById('c-rate').value, yr: +document.getElementById('c-year').value },
                 income: +document.getElementById('income').value,
                 startMonth: document.getElementById('start-month').value
             };
             saveToLocal();
-            document.getElementById('saving-badge').style.display = (inputs.pre.yr > 0 && inputs.pre.amt > 0) ? 'block' : 'none';
+            document.getElementById('saving-badge').style.display = ((inputs.pre.yr > 0 && inputs.pre.amt > 0) || (inputs.pre2.yr > 0 && inputs.pre2.amt > 0)) ? 'block' : 'none';
 
             const sH = new Loan(inputs.h.amt, inputs.h.rate, inputs.h.yr, inputs.h.grace, {year: inputs.pre.yr, amt: inputs.pre.amt}).getSchedule();
+            const sH2 = new Loan(inputs.h2.amt, inputs.h2.rate, inputs.h2.yr, inputs.h2.grace, {year: inputs.pre2.yr, amt: inputs.pre2.amt}).getSchedule();
             const sP = new Loan(inputs.p.amt, inputs.p.rate, inputs.p.yr).getSchedule();
             const sC = new Loan(inputs.c.amt, inputs.c.rate, inputs.c.yr).getSchedule();
 
-            const maxMonths = Math.max(sH.length, sP.length, sC.length);
+            const maxMonths = Math.max(sH.length, sH2.length, sP.length, sC.length);
             let combined = [];
             let totalInterest = 0;
             let [startYear, startM] = inputs.startMonth.split('-').map(Number);
@@ -390,18 +367,19 @@
 
             for (let i = 0; i < maxMonths; i++) {
                 const h = sH[i] || { payment: 0, interest: 0, principal: 0, balance: 0, isExtra: false };
+                const h2 = sH2[i] || { payment: 0, interest: 0, principal: 0, balance: 0, isExtra: false };
                 const p = sP[i] || { payment: 0, interest: 0, principal: 0, balance: 0 };
                 const c = sC[i] || { payment: 0, interest: 0, principal: 0, balance: 0 };
 
                 let currentD = new Date(startYear, startM + i, 1);
                 let dateStr = `${currentD.getFullYear()}/${(currentD.getMonth() + 1).toString().padStart(2, '0')}`;
-                let rowPay = h.payment + p.payment + c.payment;
-                let rowInt = h.interest + p.interest + c.interest;
-                let rowPrin = h.principal + p.principal + c.principal;
-                let rowBal = h.balance + p.balance + c.balance;
+                let rowPay = h.payment + h2.payment + p.payment + c.payment;
+                let rowInt = h.interest + h2.interest + p.interest + c.interest;
+                let rowPrin = h.principal + h2.principal + p.principal + c.principal;
+                let rowBal = h.balance + h2.balance + p.balance + c.balance;
 
                 totalInterest += rowInt;
-                combined.push({ idx: i+1, date: dateStr, payment: rowPay, interest: rowInt, principal: rowPrin, balance: rowBal, isExtra: h.isExtra });
+                combined.push({ idx: i+1, date: dateStr, payment: rowPay, interest: rowInt, principal: rowPrin, balance: rowBal, isExtra: (h.isExtra || h2.isExtra) });
             }
 
             const first = combined[0]?.payment || 0;
@@ -425,7 +403,7 @@
                 document.getElementById('res-dti').classList.remove('text-rose-600');
             }
             renderPagedTable(combined);
-            updateCharts(combined, (sH[0]?.payment||0), (sP[0]?.payment||0), (sC[0]?.payment||0));
+            updateCharts(combined, (sH[0]?.payment||0), (sH2[0]?.payment||0), (sP[0]?.payment||0), (sC[0]?.payment||0));
         }
 
         function renderPagedTable(data) {
@@ -477,11 +455,9 @@
             }
         }
 
-        function switchTab(idx) {
-            document.querySelectorAll('.table-page').forEach((p, i) => { p.classList.toggle('hidden', i !== idx); });
-        }
+        function switchTab(idx) { document.querySelectorAll('.table-page').forEach((p, i) => { p.classList.toggle('hidden', i !== idx); }); }
 
-        function updateCharts(data, h, p, c) {
+        function updateCharts(data, h, h2, p, c) {
             let labels = [], dataset = [];
             for(let i=0; i<data.length; i+=12) { labels.push(`第${Math.ceil((i+1)/12)}年`); dataset.push(data[i].payment); }
             if(scheduleChart) scheduleChart.destroy();
@@ -493,58 +469,45 @@
             });
             pieChart = new Chart(document.getElementById('pieChart'), {
                 type: 'doughnut',
-                data: { labels: ['房貸', '信貸', '車貸'], datasets: [{ data: [h, p, c], backgroundColor: ['#D97706', '#65A30D', '#EA580C'], borderWidth: 0 }] },
+                data: { labels: ['房貸A', '房貸B', '信貸', '車貸'], datasets: [{ data: [h, h2, p, c], backgroundColor: ['#D97706', '#9333EA', '#65A30D', '#EA580C'], borderWidth: 0 }] },
                 options: { cutout: '60%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
-            document.getElementById('pie-legend').innerHTML = `<span class="text-accent-house">● 房貸 $${fmt(h)}</span> <span class="text-accent-credit ml-2">● 信貸 $${fmt(p)}</span> <span class="text-accent-car ml-2">● 車貸 $${fmt(c)}</span>`;
+            document.getElementById('pie-legend').innerHTML = `<span class="text-accent-house1">● A $${fmt(h)}</span> <span class="text-accent-house2 ml-1">● B $${fmt(h2)}</span> <span class="text-accent-credit ml-1">● 信 $${fmt(p)}</span> <span class="text-accent-car ml-1">● 車 $${fmt(c)}</span>`;
         }
 
         function saveToLocal() {
             const data = {
                 h: { amt: document.getElementById('h-amt').value, rate: document.getElementById('h-rate').value, yr: document.getElementById('h-year').value, grace: document.getElementById('h-grace').value },
+                h2: { amt: document.getElementById('h2-amt').value, rate: document.getElementById('h2-rate').value, yr: document.getElementById('h2-year').value, grace: document.getElementById('h2-grace').value },
                 pre: { yr: document.getElementById('h-pre-yr').value, amt: document.getElementById('h-pre-amt').value },
+                pre2: { yr: document.getElementById('h2-pre-yr').value, amt: document.getElementById('h2-pre-amt').value },
                 p: { amt: document.getElementById('p-amt').value, rate: document.getElementById('p-rate').value, yr: document.getElementById('p-year').value },
                 c: { amt: document.getElementById('c-amt').value, rate: document.getElementById('c-rate').value, yr: document.getElementById('c-year').value },
                 income: document.getElementById('income').value,
                 startMonth: document.getElementById('start-month').value
             };
-            localStorage.setItem('wucj_loan_data', JSON.stringify(data));
-            const toast = document.getElementById('auto-save-toast');
-            toast.style.opacity = '1';
-            setTimeout(() => toast.style.opacity = '0', 2000);
+            localStorage.setItem('wucj_loan_data_v2', JSON.stringify(data));
+            const toast = document.getElementById('auto-save-toast'); toast.style.opacity = '1'; setTimeout(() => toast.style.opacity = '0', 2000);
         }
 
         function loadFromLocal() {
-            const raw = localStorage.getItem('wucj_loan_data');
-            if (!raw) return;
+            const raw = localStorage.getItem('wucj_loan_data_v2'); if (!raw) return;
             try {
                 const d = JSON.parse(raw);
                 if(d.h) { document.getElementById('h-amt').value = d.h.amt; document.getElementById('h-rate').value = d.h.rate; document.getElementById('h-year').value = d.h.yr; document.getElementById('h-grace').value = d.h.grace; }
+                if(d.h2) { document.getElementById('h2-amt').value = d.h2.amt; document.getElementById('h2-rate').value = d.h2.rate; document.getElementById('h2-year').value = d.h2.yr; document.getElementById('h2-grace').value = d.h2.grace; }
                 if(d.pre) { document.getElementById('h-pre-yr').value = d.pre.yr; document.getElementById('h-pre-amt').value = d.pre.amt; }
+                if(d.pre2) { document.getElementById('h2-pre-yr').value = d.pre2.yr; document.getElementById('h2-pre-amt').value = d.pre2.amt; }
                 if(d.p) { document.getElementById('p-amt').value = d.p.amt; document.getElementById('p-rate').value = d.p.rate; document.getElementById('p-year').value = d.p.yr; }
                 if(d.c) { document.getElementById('c-amt').value = d.c.amt; document.getElementById('c-rate').value = d.c.rate; document.getElementById('c-year').value = d.c.yr; }
                 if(d.income) document.getElementById('income').value = d.income;
                 if(d.startMonth) document.getElementById('start-month').value = d.startMonth;
-            } catch(e) { console.log('Load error', e); }
+            } catch(e) {}
         }
 
-        function generateShareCard() {
-            window.scrollTo(0, 0);
-            const card = document.getElementById('share-card-canvas');
-            html2canvas(card, { scale: 1 }).then(canvas => { const link = document.createElement('a'); link.download = 'WUCJ_Finance_Plan.png'; link.href = canvas.toDataURL(); link.click(); });
-        }
-
-        function exportData() {
-            const raw = localStorage.getItem('wucj_loan_data');
-            if(!raw) { alert('尚無資料可儲存'); return; }
-            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([raw], {type: "application/json"})); a.download = "loan_backup_wucj.json"; a.click();
-        }
-
-        function importData(input) {
-            const file = input.files[0]; if(!file) return;
-            const r = new FileReader();
-            r.onload = (e) => { localStorage.setItem('wucj_loan_data', e.target.result); loadFromLocal(); calculateAll(); alert('讀取成功！'); }; r.readAsText(file);
-        }
+        function generateShareCard() { window.scrollTo(0, 0); const card = document.getElementById('share-card-canvas'); html2canvas(card, { scale: 1 }).then(canvas => { const link = document.createElement('a'); link.download = 'WUCJ_Finance_Plan.png'; link.href = canvas.toDataURL(); link.click(); }); }
+        function exportData() { const raw = localStorage.getItem('wucj_loan_data_v2'); if(!raw) { alert('尚無資料可儲存'); return; } const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([raw], {type: "application/json"})); a.download = "loan_backup_wucj.json"; a.click(); }
+        function importData(input) { const file = input.files[0]; if(!file) return; const r = new FileReader(); r.onload = (e) => { localStorage.setItem('wucj_loan_data_v2', e.target.result); loadFromLocal(); calculateAll(); alert('讀取成功！'); }; r.readAsText(file); }
 
         document.querySelectorAll('input').forEach(el => el.addEventListener('input', calculateAll));
         window.onload = function() { loadFromLocal(); calculateAll(); }

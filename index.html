@@ -2,10 +2,12 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>溫馨理財｜全方位貸款計算機 - WUCJ</title>
+    <!-- 核心套件 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
     
@@ -18,6 +20,9 @@
                         cream: '#FFFBF5',
                         warm: { 50: '#FAF7F2', 100: '#F5EFE6', 200: '#E6DCC9', 500: '#B89F7D', 600: '#8C7051', 800: '#5D4037' },
                         accent: { house: '#D97706', credit: '#65A30D', car: '#EA580C' }
+                    },
+                    screens: {
+                        'print': {'raw': 'print'},
                     }
                 }
             }
@@ -25,57 +30,73 @@
     </script>
 
     <style>
-        body { background-color: #FFFBF5; color: #5D4037; }
+        body { background-color: #FFFBF5; color: #5D4037; -webkit-tap-highlight-color: transparent; }
         
-        .btn-warm { background-color: #D97706; color: white; padding: 0.5rem 1rem; border-radius: 9999px; transition: all 0.3s; box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.2); }
-        .btn-warm:hover { background-color: #B45309; transform: translateY(-1px); }
-        .btn-soft { background-color: #FFF; border: 2px solid #E6DCC9; color: #8C7051; padding: 0.5rem 1rem; border-radius: 9999px; transition: all 0.3s; cursor: pointer; }
-        .btn-soft:hover, .btn-soft.active { background-color: #F5EFE6; border-color: #B89F7D; color: #5D4037; font-weight: bold; }
-        .input-warm { background-color: #FFF; border: 1px solid #E6DCC9; border-radius: 0.75rem; padding: 0.5rem; width: 100%; color: #5D4037; transition: border-color 0.3s; }
+        /* 手機優化：按鈕觸控區加大 */
+        .btn-warm { background-color: #D97706; color: white; padding: 0.75rem 1.25rem; border-radius: 9999px; transition: all 0.3s; box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.2); font-weight: bold; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn-warm:active { transform: scale(0.95); background-color: #B45309; }
+        
+        .btn-soft { background-color: #FFF; border: 2px solid #E6DCC9; color: #8C7051; padding: 0.5rem 1rem; border-radius: 9999px; transition: all 0.2s; white-space: nowrap; }
+        .btn-soft:active, .btn-soft.active { background-color: #F5EFE6; border-color: #B89F7D; color: #5D4037; font-weight: bold; }
+        
+        /* 手機優化：輸入框高度 */
+        .input-warm { background-color: #FFF; border: 1px solid #E6DCC9; border-radius: 0.75rem; padding: 0.75rem; width: 100%; color: #5D4037; font-size: 16px; /* 防止 iOS 縮放 */ }
         .input-warm:focus { outline: none; border-color: #D97706; ring: 2px solid #FEF3C7; }
-        .card-warm { background-color: white; border-radius: 1rem; box-shadow: 0 10px 25px -5px rgba(93, 64, 55, 0.05); border: 1px solid #F5EFE6; }
+        
+        .card-warm { background-color: white; border-radius: 1.25rem; box-shadow: 0 4px 20px -5px rgba(93, 64, 55, 0.08); border: 1px solid #F5EFE6; }
 
-        /* 列印專用樣式 */
+        /* 分享卡片樣式 (隱藏生成用) */
+        #share-card-canvas {
+            width: 1080px; height: 1080px; position: fixed; left: -9999px; top: 0; background: #FFFBF5;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 80px;
+            font-family: "Zen Maru Gothic", sans-serif;
+        }
+
+        /* 列印設定 */
         @media print {
             body { background-color: white; color: black; }
             .no-print { display: none !important; }
             .print-only { display: block !important; }
-            .card-warm { box-shadow: none; border: 1px solid #eee; margin-bottom: 20px; page-break-inside: avoid; }
-            
-            /* 強制每一頁表格區塊分頁 */
+            .card-warm { box-shadow: none; border: 1px solid #ccc; margin-bottom: 20px; page-break-inside: avoid; }
             .table-page { display: block !important; page-break-before: always; margin-top: 20px; }
-            .table-page:first-of-type { page-break-before: auto; } /* 第一頁不強制換頁 */
-            
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .table-page:first-of-type { page-break-before: auto; }
         }
     </style>
 </head>
-<body class="p-4 sm:p-6 min-h-screen">
+<body class="p-4 md:p-8 min-h-screen">
 
     <!-- 頂部導航 -->
-    <nav class="max-w-7xl mx-auto flex justify-between items-center mb-8 no-print pt-2">
+    <nav class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center mb-6 no-print gap-4">
         <div class="flex items-center gap-3">
-            <div class="bg-orange-100 p-2 rounded-full text-2xl">🏡</div>
+            <div class="bg-orange-100 p-2 rounded-full text-2xl shadow-sm">🏡</div>
             <h1 class="text-2xl font-bold text-warm-800 tracking-wider">貸款計算機</h1>
+            <span id="auto-save-toast" class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full opacity-0 transition-opacity"><i class="fas fa-check"></i> 已自動儲存</span>
         </div>
-        <a href="https://vocus.cc/user/@WUCJ" target="_blank" class="flex items-center gap-2 text-warm-600 hover:text-accent-house transition font-medium text-sm sm:text-base">
-            <img src="https://ui-avatars.com/api/?name=WUCJ&background=B45309&color=fff" class="w-8 h-8 rounded-full shadow-sm">
+        <a href="https://vocus.cc/user/@WUCJ" target="_blank" class="flex items-center gap-2 text-warm-600 hover:text-accent-house transition font-medium bg-white px-4 py-2 rounded-full shadow-sm border border-warm-100">
+            <img src="https://ui-avatars.com/api/?name=WUCJ&background=B45309&color=fff" class="w-6 h-6 rounded-full">
             <span>追蹤 WUCJ</span>
         </a>
     </nav>
 
-    <div class="max-w-7xl mx-auto space-y-8">
+    <div class="max-w-7xl mx-auto space-y-6">
         
-        <!-- 工具列 -->
-        <div class="flex flex-wrap justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-warm-100 no-print">
-            <div class="flex flex-wrap gap-2 mb-2 sm:mb-0">
-                <button onclick="document.getElementById('importFile').click()" class="btn-soft text-sm"><i class="fas fa-folder-open"></i> 讀取舊檔</button>
-                <button onclick="exportData()" class="btn-soft text-sm"><i class="fas fa-save"></i> 儲存設定</button>
-                <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(this)">
+        <!-- 工具列 (RWD: 手機版自動換行) -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-warm-100 no-print">
+            <div class="flex flex-col sm:flex-row gap-3 justify-between items-center">
+                <div class="flex gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                    <button onclick="document.getElementById('importFile').click()" class="btn-soft text-sm"><i class="fas fa-folder-open"></i> 讀取</button>
+                    <button onclick="exportData()" class="btn-soft text-sm"><i class="fas fa-download"></i> 備份</button>
+                    <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(this)">
+                </div>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button onclick="generateShareCard()" class="btn-warm flex-1 sm:flex-none text-sm bg-gradient-to-r from-purple-500 to-pink-500 border-none">
+                        <i class="fab fa-instagram"></i> 生成分享卡
+                    </button>
+                    <button onclick="window.print()" class="btn-warm flex-1 sm:flex-none text-sm">
+                        <i class="fas fa-print"></i> 列印 / PDF
+                    </button>
+                </div>
             </div>
-            <button onclick="window.print()" class="btn-warm text-sm font-bold flex items-center gap-2">
-                <i class="fas fa-print"></i> 一鍵列印 / 另存 PDF
-            </button>
         </div>
 
         <!-- 列印標頭 -->
@@ -87,27 +108,41 @@
         <!-- 輸入區塊 -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 no-print">
             
-            <!-- 房貸 -->
-            <div class="card-warm p-6 border-t-4 border-amber-500 relative overflow-hidden">
+            <!-- 房貸 (含提前還款功能) -->
+            <div class="card-warm p-5 border-t-4 border-amber-500 relative overflow-hidden">
                 <div class="absolute -right-4 -top-4 text-amber-50 opacity-50 text-9xl pointer-events-none rotate-12"><i class="fas fa-home"></i></div>
-                <h3 class="font-bold text-lg mb-5 text-warm-800 flex items-center"><span class="w-2 h-8 bg-amber-500 rounded-full mr-3"></span>房屋貸款</h3>
+                <h3 class="font-bold text-lg mb-4 text-warm-800 flex items-center"><span class="w-2 h-6 bg-amber-500 rounded-full mr-2"></span>房屋貸款</h3>
                 <div class="space-y-4 relative z-10">
                     <div><label class="text-xs text-warm-600 ml-1">貸款金額 (萬元)</label><input type="number" id="h-amt" class="input-warm" value="1000"></div>
-                    <div class="flex gap-4">
+                    <div class="flex gap-3">
                         <div class="w-1/2"><label class="text-xs text-warm-600 ml-1">年利率 (%)</label><input type="number" id="h-rate" class="input-warm" value="2.1" step="0.01"></div>
                         <div class="w-1/2"><label class="text-xs text-warm-600 ml-1">期限 (年)</label><input type="number" id="h-year" class="input-warm" value="30"></div>
+                    </div>
+                    <!-- 進階：提前還款 -->
+                    <div class="bg-amber-50 p-3 rounded-xl border border-amber-100">
+                        <div class="flex items-center justify-between mb-2 cursor-pointer" onclick="togglePrepay()">
+                            <label class="text-xs font-bold text-amber-800 flex items-center"><i class="fas fa-piggy-bank mr-1"></i> 提前還款試算</label>
+                            <i class="fas fa-chevron-down text-amber-800 text-xs" id="prepay-icon"></i>
+                        </div>
+                        <div id="prepay-box" class="hidden space-y-3">
+                            <div class="flex gap-3">
+                                <div class="w-1/2"><label class="text-[10px] text-amber-700">第幾年還款</label><input type="number" id="h-pre-yr" class="input-warm text-sm p-2" placeholder="例如 5"></div>
+                                <div class="w-1/2"><label class="text-[10px] text-amber-700">額外還款(萬)</label><input type="number" id="h-pre-amt" class="input-warm text-sm p-2" placeholder="例如 100"></div>
+                            </div>
+                            <p class="text-[10px] text-amber-600">*試算：還款後月付金降低，年限不變</p>
+                        </div>
                     </div>
                     <div><label class="text-xs text-warm-600 ml-1">寬限期 (年)</label><input type="number" id="h-grace" class="input-warm bg-orange-50" value="0"></div>
                 </div>
             </div>
 
             <!-- 信貸 -->
-            <div class="card-warm p-6 border-t-4 border-lime-600 relative overflow-hidden">
+            <div class="card-warm p-5 border-t-4 border-lime-600 relative overflow-hidden">
                 <div class="absolute -right-4 -top-4 text-lime-50 opacity-50 text-9xl pointer-events-none rotate-12"><i class="fas fa-coins"></i></div>
-                <h3 class="font-bold text-lg mb-5 text-warm-800 flex items-center"><span class="w-2 h-8 bg-lime-600 rounded-full mr-3"></span>信用貸款</h3>
+                <h3 class="font-bold text-lg mb-4 text-warm-800 flex items-center"><span class="w-2 h-6 bg-lime-600 rounded-full mr-2"></span>信用貸款</h3>
                 <div class="space-y-4 relative z-10">
                     <div><label class="text-xs text-warm-600 ml-1">貸款金額 (萬元)</label><input type="number" id="p-amt" class="input-warm" value="0"></div>
-                    <div class="flex gap-4">
+                    <div class="flex gap-3">
                         <div class="w-1/2"><label class="text-xs text-warm-600 ml-1">年利率 (%)</label><input type="number" id="p-rate" class="input-warm" value="3.5" step="0.01"></div>
                         <div class="w-1/2"><label class="text-xs text-warm-600 ml-1">期限 (年)</label><input type="number" id="p-year" class="input-warm" value="7"></div>
                     </div>
@@ -115,12 +150,12 @@
             </div>
 
             <!-- 車貸 -->
-            <div class="card-warm p-6 border-t-4 border-orange-600 relative overflow-hidden">
+            <div class="card-warm p-5 border-t-4 border-orange-600 relative overflow-hidden">
                 <div class="absolute -right-4 -top-4 text-orange-50 opacity-50 text-9xl pointer-events-none rotate-12"><i class="fas fa-car-side"></i></div>
-                <h3 class="font-bold text-lg mb-5 text-warm-800 flex items-center"><span class="w-2 h-8 bg-orange-600 rounded-full mr-3"></span>汽車貸款</h3>
+                <h3 class="font-bold text-lg mb-4 text-warm-800 flex items-center"><span class="w-2 h-6 bg-orange-600 rounded-full mr-2"></span>汽車貸款</h3>
                 <div class="space-y-4 relative z-10">
                     <div><label class="text-xs text-warm-600 ml-1">貸款金額 (萬元)</label><input type="number" id="c-amt" class="input-warm" value="0"></div>
-                    <div class="flex gap-4">
+                    <div class="flex gap-3">
                         <div class="w-1/2"><label class="text-xs text-warm-600 ml-1">年利率 (%)</label><input type="number" id="c-rate" class="input-warm" value="4.0" step="0.01"></div>
                         <div class="w-1/2"><label class="text-xs text-warm-600 ml-1">期限 (年)</label><input type="number" id="c-year" class="input-warm" value="5"></div>
                     </div>
@@ -129,8 +164,8 @@
         </div>
 
         <!-- 全局設定 (開始時間 + 收入) -->
-        <div class="card-warm p-6 bg-warm-50 border border-warm-200 no-print">
-            <div class="flex flex-col md:flex-row items-end gap-6">
+        <div class="card-warm p-5 bg-warm-50 border border-warm-200 no-print">
+            <div class="flex flex-col md:flex-row items-end gap-4">
                 <div class="w-full md:w-1/3">
                     <label class="font-bold text-warm-800 text-sm"><i class="fas fa-calendar-alt mr-2"></i>開始還款月份</label>
                     <input type="month" id="start-month" class="input-warm mt-1" onchange="calculateAll()">
@@ -139,9 +174,9 @@
                     <label class="font-bold text-warm-800 text-sm"><i class="fas fa-wallet mr-2"></i>月收入 (元)</label>
                     <input type="number" id="income" class="input-warm mt-1" value="60000">
                 </div>
-                <div class="w-full md:w-1/3">
-                    <div id="dti-msg" class="hidden text-rose-600 text-sm font-bold"><i class="fas fa-exclamation-triangle"></i> 負債比過高 (>60%)</div>
-                    <div id="dti-ok" class="hidden text-green-700 text-sm font-bold"><i class="fas fa-check-circle"></i> 財務狀況健康</div>
+                <div class="w-full md:w-1/3 bg-white p-3 rounded-xl border border-warm-100 shadow-sm">
+                    <div id="dti-msg" class="hidden text-rose-600 text-sm font-bold flex items-center"><i class="fas fa-exclamation-triangle mr-2 text-xl"></i> <div>負債比過高 (>60%)<br><span class="text-[10px] font-normal">建議至 WUCJ 部落格查看優化建議</span></div></div>
+                    <div id="dti-ok" class="hidden text-green-700 text-sm font-bold flex items-center"><i class="fas fa-check-circle mr-2 text-xl"></i> 財務狀況健康</div>
                 </div>
             </div>
         </div>
@@ -153,23 +188,25 @@
                 <div class="w-40 h-40 relative">
                     <canvas id="pieChart"></canvas>
                 </div>
+                <div class="mt-4 text-center text-xs text-warm-500" id="pie-legend"></div>
             </div>
             <div class="md:col-span-2 card-warm p-6">
-                <h4 class="text-warm-600 font-bold mb-4 border-b border-warm-100 pb-2">財務預測摘要</h4>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mb-6">
+                <h4 class="text-warm-600 font-bold mb-4 border-b border-warm-100 pb-2 flex justify-between">
+                    <span>財務預測摘要</span>
+                    <span class="text-xs font-normal bg-orange-100 text-orange-800 px-2 py-1 rounded" id="saving-badge" style="display:none">🎉 提前還款省息中</span>
+                </h4>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center mb-6">
                     <div class="p-3 bg-orange-50 rounded-xl"><div class="text-xs text-warm-500">首月支出</div><div class="text-lg font-bold text-accent-house" id="res-monthly">$0</div></div>
                     <div class="p-3 bg-stone-50 rounded-xl"><div class="text-xs text-warm-500">每年支出</div><div class="text-lg font-bold text-warm-800" id="res-yearly">$0</div></div>
                     <div class="p-3 bg-stone-50 rounded-xl"><div class="text-xs text-warm-500">總利息</div><div class="text-lg font-bold text-warm-600" id="res-interest">$0</div></div>
                     <div class="p-3 bg-lime-50 rounded-xl"><div class="text-xs text-warm-500">負債比</div><div class="text-lg font-bold text-accent-credit" id="res-dti">0%</div></div>
                 </div>
-                <div class="h-40"><canvas id="scheduleChart"></canvas></div>
+                <div class="h-48 w-full"><canvas id="scheduleChart"></canvas></div>
             </div>
         </div>
 
         <!-- 詳細表格區 (包含分頁邏輯) -->
-        <div id="schedule-container">
-            <!-- JS 將在這裡動態生成表格 -->
-        </div>
+        <div id="schedule-container" class="space-y-4"></div>
 
         <!-- 頁尾 -->
         <footer class="text-center text-warm-500 text-sm py-8 print-only-footer">
@@ -177,12 +214,48 @@
             <a href="https://vocus.cc/user/@WUCJ" target="_blank" class="inline-block px-4 py-2 rounded-full bg-white border border-warm-200 hover:bg-warm-50 transition">
                 更多文章請至 <strong class="text-accent-house">WUCJ 的方格子</strong>
             </a>
-            <p class="text-xs mt-4 opacity-60">計算結果僅供參考。</p>
+            <p class="text-xs mt-4 opacity-60">計算結果僅供參考，實際以銀行為準。</p>
         </footer>
     </div>
 
+    <!-- 隱藏的 Canvas 模板 (用於生成 IG 圖卡) -->
+    <div id="share-card-canvas">
+        <div class="w-full text-center">
+            <h1 class="text-6xl font-bold text-warm-800 mb-4">財務自由藍圖</h1>
+            <p class="text-3xl text-warm-600">MY LOAN PLAN</p>
+        </div>
+        
+        <div class="w-full bg-white p-10 rounded-[3rem] shadow-lg border-4 border-warm-100">
+            <div class="flex justify-between items-end mb-8 border-b-4 border-warm-100 pb-6">
+                <span class="text-3xl text-warm-500 font-bold">每月現金流支出</span>
+                <span class="text-7xl font-bold text-accent-house" id="card-monthly">$0</span>
+            </div>
+             <div class="flex justify-between items-end mb-8 border-b-4 border-warm-100 pb-6">
+                <span class="text-3xl text-warm-500 font-bold">預估總利息</span>
+                <span class="text-7xl font-bold text-warm-600" id="card-interest">$0</span>
+            </div>
+            <div class="flex justify-between items-end">
+                <span class="text-3xl text-warm-500 font-bold">負債比 (DTI)</span>
+                <span class="text-7xl font-bold text-accent-credit" id="card-dti">0%</span>
+            </div>
+        </div>
+
+        <div class="w-full flex justify-between items-center px-4">
+            <div class="text-left">
+                <p class="text-3xl text-warm-800 font-bold mb-2">理財，是為了更自由的明天。</p>
+                <p class="text-2xl text-warm-500">Designed by WUCJ 貸款計算機</p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-md">
+                <!-- 這裡可以放您的 QR Code 圖片，這裡暫用文字代替 -->
+                <div class="w-32 h-32 bg-warm-200 flex items-center justify-center text-warm-800 font-bold rounded">
+                    WUCJ<br>Vocus
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // 設定預設月份為下個月
+        // 初始化設定
         const today = new Date();
         const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
         document.getElementById('start-month').value = nextMonth.toISOString().slice(0, 7);
@@ -190,64 +263,131 @@
         let scheduleChart, pieChart;
         const fmt = (n) => Math.round(n).toLocaleString();
 
-        // 貸款類別
+        // 核心計算類別
         class Loan {
-            constructor(amountWan, rate, years, graceYears = 0) {
+            constructor(amountWan, rate, years, graceYears = 0, extraPay = {year: 0, amt: 0}) {
                 this.principal = amountWan * 10000;
                 this.rate = rate / 100 / 12;
                 this.periods = years * 12;
                 this.gracePeriods = graceYears * 12;
+                this.extraPayMonth = extraPay.year * 12;
+                this.extraPayAmount = extraPay.amt * 10000;
             }
+
             getSchedule() {
                 let schedule = [];
                 let balance = this.principal;
-                let amortizePeriods = this.periods - this.gracePeriods;
-                let pmt = (amortizePeriods > 0 && this.rate > 0) 
-                    ? (this.principal * this.rate * Math.pow(1 + this.rate, amortizePeriods)) / (Math.pow(1 + this.rate, amortizePeriods) - 1)
-                    : (amortizePeriods > 0 ? this.principal / amortizePeriods : 0);
+                let pmt = this.calculatePMT(balance, this.periods - this.gracePeriods);
 
                 for (let i = 1; i <= this.periods; i++) {
+                    // 處理提前還款
+                    let extraPayment = 0;
+                    if (i === this.extraPayMonth && this.extraPayAmount > 0) {
+                        balance -= this.extraPayAmount;
+                        if (balance < 0) { extraPayment = this.extraPayAmount + balance; balance = 0; } 
+                        else { extraPayment = this.extraPayAmount; }
+                        
+                        // 提前還款後，通常銀行會降低月付金 (年限不變)
+                        // 重新計算 PMT，剩餘期數 = 總期數 - 當前已過期數
+                        let remainingPeriods = this.periods - i;
+                        if (remainingPeriods > 0) {
+                            pmt = this.calculatePMT(balance, remainingPeriods);
+                        } else { pmt = balance; }
+                    }
+
                     let interest = balance * this.rate;
-                    let payment = (i <= this.gracePeriods) ? interest : pmt;
-                    let principalPaid = payment - interest;
-                    if (i > this.gracePeriods && balance - principalPaid < 10) { principalPaid = balance; payment = principalPaid + interest; }
-                    balance -= principalPaid; if (balance < 0) balance = 0;
-                    schedule.push({ month: i, payment, interest, principal: principalPaid, balance });
+                    let payment = 0;
+                    let principalPaid = 0;
+
+                    if (i <= this.gracePeriods) {
+                        payment = interest;
+                    } else {
+                        payment = pmt;
+                        principalPaid = payment - interest;
+                        // 修正最後一期
+                        if (balance - principalPaid < 10 || i === this.periods) {
+                            principalPaid = balance;
+                            payment = principalPaid + interest;
+                        }
+                    }
+                    
+                    // 加上該月額外還款金額到當月支出
+                    let totalCashOut = payment + extraPayment;
+
+                    balance -= principalPaid;
+                    if (balance < 0) balance = 0;
+
+                    schedule.push({ 
+                        month: i, 
+                        payment: totalCashOut, // 現金流支出
+                        interest: interest, 
+                        principal: principalPaid, 
+                        balance: balance,
+                        isExtra: extraPayment > 0
+                    });
+
+                    if (balance <= 0 && extraPayment === 0) break; // 已還完
                 }
                 return schedule;
+            }
+
+            calculatePMT(p, n) {
+                if (n <= 0) return 0;
+                if (this.rate === 0) return p / n;
+                return (p * this.rate * Math.pow(1 + this.rate, n)) / (Math.pow(1 + this.rate, n) - 1);
+            }
+        }
+
+        // UI 互動：展開/收合提前還款
+        function togglePrepay() {
+            const box = document.getElementById('prepay-box');
+            const icon = document.getElementById('prepay-icon');
+            if (box.classList.contains('hidden')) {
+                box.classList.remove('hidden');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                box.classList.add('hidden');
+                icon.classList.add('fa-chevron-down');
+                icon.classList.remove('fa-chevron-up');
             }
         }
 
         function calculateAll() {
-            // 取得輸入
+            // 讀取輸入
             const inputs = {
                 h: { amt: +document.getElementById('h-amt').value, rate: +document.getElementById('h-rate').value, yr: +document.getElementById('h-year').value, grace: +document.getElementById('h-grace').value },
+                pre: { yr: +document.getElementById('h-pre-yr').value, amt: +document.getElementById('h-pre-amt').value },
                 p: { amt: +document.getElementById('p-amt').value, rate: +document.getElementById('p-rate').value, yr: +document.getElementById('p-year').value },
                 c: { amt: +document.getElementById('c-amt').value, rate: +document.getElementById('c-rate').value, yr: +document.getElementById('c-year').value },
                 income: +document.getElementById('income').value,
                 startMonth: document.getElementById('start-month').value
             };
 
-            const sH = new Loan(inputs.h.amt, inputs.h.rate, inputs.h.yr, inputs.h.grace).getSchedule();
+            // 儲存到 LocalStorage
+            saveToLocal();
+
+            // 顯示省息徽章
+            document.getElementById('saving-badge').style.display = (inputs.pre.yr > 0 && inputs.pre.amt > 0) ? 'block' : 'none';
+
+            // 計算
+            const sH = new Loan(inputs.h.amt, inputs.h.rate, inputs.h.yr, inputs.h.grace, {year: inputs.pre.yr, amt: inputs.pre.amt}).getSchedule();
             const sP = new Loan(inputs.p.amt, inputs.p.rate, inputs.p.yr).getSchedule();
             const sC = new Loan(inputs.c.amt, inputs.c.rate, inputs.c.yr).getSchedule();
 
             const maxMonths = Math.max(sH.length, sP.length, sC.length);
             let combined = [];
             let totalInterest = 0;
-
-            // 日期計算基礎
             let [startYear, startM] = inputs.startMonth.split('-').map(Number);
-            startM -= 1; // JS月份從0開始
+            startM -= 1;
 
             for (let i = 0; i < maxMonths; i++) {
-                const h = sH[i] || { payment: 0, interest: 0, principal: 0, balance: 0 };
+                const h = sH[i] || { payment: 0, interest: 0, principal: 0, balance: 0, isExtra: false };
                 const p = sP[i] || { payment: 0, interest: 0, principal: 0, balance: 0 };
                 const c = sC[i] || { payment: 0, interest: 0, principal: 0, balance: 0 };
 
-                // 計算當前行日期
                 let currentD = new Date(startYear, startM + i, 1);
-                let dateStr = `${currentD.getFullYear()} / ${(currentD.getMonth() + 1).toString().padStart(2, '0')}`;
+                let dateStr = `${currentD.getFullYear()}/${(currentD.getMonth() + 1).toString().padStart(2, '0')}`;
 
                 let rowPay = h.payment + p.payment + c.payment;
                 let rowInt = h.interest + p.interest + c.interest;
@@ -255,138 +395,103 @@
                 let rowBal = h.balance + p.balance + c.balance;
 
                 totalInterest += rowInt;
-                combined.push({ idx: i+1, date: dateStr, payment: rowPay, interest: rowInt, principal: rowPrin, balance: rowBal });
+                combined.push({ idx: i+1, date: dateStr, payment: rowPay, interest: rowInt, principal: rowPrin, balance: rowBal, isExtra: h.isExtra });
             }
 
-            updateDashboard(combined, totalInterest, inputs.income, (sH[0]?.payment||0), (sP[0]?.payment||0), (sC[0]?.payment||0));
-            renderPagedTable(combined);
-            updateCharts(combined, (sH[0]?.payment||0), (sP[0]?.payment||0), (sC[0]?.payment||0));
-        }
-
-        function updateDashboard(data, totalInt, income, h, p, c) {
-            const first = data[0]?.payment || 0;
+            // 更新儀表板
+            const first = combined[0]?.payment || 0;
             document.getElementById('res-monthly').innerText = '$' + fmt(first);
             document.getElementById('res-yearly').innerText = '$' + fmt(first * 12);
-            document.getElementById('res-interest').innerText = '$' + fmt(totalInt);
+            document.getElementById('res-interest').innerText = '$' + fmt(totalInterest);
             
-            const dti = income > 0 ? (first / income * 100) : 0;
-            const dtiEl = document.getElementById('res-dti');
-            dtiEl.innerText = dti.toFixed(1) + '%';
+            // 更新卡片隱藏數值
+            document.getElementById('card-monthly').innerText = '$' + fmt(first);
+            document.getElementById('card-interest').innerText = '$' + fmt(totalInterest);
+
+            const dti = inputs.income > 0 ? (first / inputs.income * 100) : 0;
+            document.getElementById('res-dti').innerText = dti.toFixed(1) + '%';
+            document.getElementById('card-dti').innerText = dti.toFixed(1) + '%';
             
             if(dti > 60) {
                 document.getElementById('dti-msg').classList.remove('hidden');
                 document.getElementById('dti-ok').classList.add('hidden');
-                dtiEl.classList.add('text-rose-600');
+                document.getElementById('res-dti').classList.add('text-rose-600');
             } else {
                 document.getElementById('dti-msg').classList.add('hidden');
                 document.getElementById('dti-ok').classList.remove('hidden');
-                dtiEl.classList.remove('text-rose-600');
+                document.getElementById('res-dti').classList.remove('text-rose-600');
             }
+
+            // 渲染表格與圖表
+            renderPagedTable(combined);
+            updateCharts(combined, (sH[0]?.payment||0), (sP[0]?.payment||0), (sC[0]?.payment||0));
         }
 
-        // --- 核心：分頁表格渲染 ---
+        // 分頁表格
         function renderPagedTable(data) {
             const container = document.getElementById('schedule-container');
-            container.innerHTML = ''; // 清空
-
-            const pageSize = 120; // 10年一頁
+            container.innerHTML = '';
+            const pageSize = 120; // 10年
             const totalPages = Math.ceil(data.length / pageSize);
-            
-            // 1. 建立分頁按鈕區 (僅螢幕顯示)
+
             if (totalPages > 1) {
                 const tabContainer = document.createElement('div');
-                tabContainer.className = 'flex gap-2 mb-4 overflow-x-auto pb-2 no-print';
+                tabContainer.className = 'flex gap-2 pb-2 overflow-x-auto no-print';
                 for (let i = 0; i < totalPages; i++) {
                     const btn = document.createElement('button');
                     const startY = i * 10 + 1;
                     const endY = Math.min((i + 1) * 10, Math.ceil(data.length/12));
-                    btn.className = `btn-soft text-xs whitespace-nowrap ${i === 0 ? 'active' : ''}`;
-                    btn.innerHTML = `第 ${startY}-${endY} 年`;
-                    btn.onclick = () => switchTab(i);
+                    btn.className = `btn-soft text-xs ${i === 0 ? 'active' : ''}`;
+                    btn.innerText = `第 ${startY}-${endY} 年`;
+                    btn.onclick = (e) => { 
+                        switchTab(i); 
+                        document.querySelectorAll('.btn-soft').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                    };
                     tabContainer.appendChild(btn);
                 }
                 container.appendChild(tabContainer);
             }
 
-            // 2. 建立各頁表格
             for (let i = 0; i < totalPages; i++) {
                 const pageData = data.slice(i * pageSize, (i + 1) * pageSize);
-                
-                // 外層容器 (用於控制顯示/隱藏 和 列印分頁)
                 const pageDiv = document.createElement('div');
                 pageDiv.className = `table-page card-warm overflow-hidden ${i === 0 ? '' : 'hidden'}`;
                 pageDiv.id = `page-${i}`;
-
-                // 標題
-                const header = document.createElement('div');
-                header.className = 'p-4 bg-warm-100 border-b border-warm-200 flex justify-between items-center';
+                
                 const startY = i * 10 + 1;
                 const endY = Math.min((i + 1) * 10, Math.ceil(data.length/12));
-                header.innerHTML = `<h3 class="font-bold text-warm-800"><i class="fas fa-calendar-week mr-2"></i>還款明細 (第 ${startY} - ${endY} 年)</h3>`;
-                pageDiv.appendChild(header);
-
-                // 表格本體
-                const tableWrap = document.createElement('div');
-                tableWrap.className = 'overflow-x-auto';
-                const table = document.createElement('table');
-                table.className = 'w-full text-sm text-left';
-                table.innerHTML = `
-                    <thead class="bg-warm-50 text-warm-600">
-                        <tr>
-                            <th class="p-3 pl-6">期數</th>
-                            <th class="p-3">月份</th>
-                            <th class="p-3 text-right">本月應繳</th>
-                            <th class="p-3 text-right text-warm-400">利息</th>
-                            <th class="p-3 text-right text-warm-400">本金</th>
-                            <th class="p-3 text-right pr-6">剩餘本金</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-warm-100 text-warm-700">
-                        ${pageData.map(row => `
-                            <tr class="hover:bg-orange-50 transition">
-                                <td class="p-3 pl-6">${row.idx}</td>
-                                <td class="p-3 text-warm-800 font-mono">${row.date}</td>
-                                <td class="p-3 text-right font-bold">$${fmt(row.payment)}</td>
-                                <td class="p-3 text-right text-xs text-warm-500">$${fmt(row.interest)}</td>
-                                <td class="p-3 text-right text-xs text-warm-500">$${fmt(row.principal)}</td>
-                                <td class="p-3 text-right pr-6 text-warm-400">$${fmt(row.balance)}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
+                
+                pageDiv.innerHTML = `
+                    <div class="p-4 bg-warm-100 border-b border-warm-200 flex justify-between items-center">
+                        <h3 class="font-bold text-warm-800 text-sm"><i class="fas fa-calendar-week mr-2"></i>還款明細 (第 ${startY} - ${endY} 年)</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left whitespace-nowrap">
+                            <thead class="bg-warm-50 text-warm-600"><tr><th class="p-3 pl-4">期數</th><th class="p-3">月份</th><th class="p-3 text-right">本月支出</th><th class="p-3 text-right text-warm-400">利息</th><th class="p-3 text-right text-warm-400">本金</th><th class="p-3 text-right pr-4">剩餘本金</th></tr></thead>
+                            <tbody class="divide-y divide-warm-100 text-warm-700">
+                                ${pageData.map(row => `
+                                    <tr class="${row.isExtra ? 'bg-amber-100' : 'hover:bg-orange-50'} transition">
+                                        <td class="p-3 pl-4">${row.idx}</td>
+                                        <td class="p-3 font-mono">${row.date}</td>
+                                        <td class="p-3 text-right font-bold text-warm-800">$${fmt(row.payment)}${row.isExtra?'<span class="text-[10px] block text-amber-600">(含提前還款)</span>':''}</td>
+                                        <td class="p-3 text-right text-xs text-warm-500">$${fmt(row.interest)}</td>
+                                        <td class="p-3 text-right text-xs text-warm-500">$${fmt(row.principal)}</td>
+                                        <td class="p-3 text-right pr-4 text-warm-400">$${fmt(row.balance)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
                 `;
-                tableWrap.appendChild(table);
-                pageDiv.appendChild(tableWrap);
                 container.appendChild(pageDiv);
             }
         }
 
-        // 切換分頁籤
-        function switchTab(index) {
-            // 更新按鈕狀態
-            const btns = document.querySelectorAll('.btn-soft');
-            btns.forEach((btn, idx) => {
-                if (idx === index + 2) { // +2 是因為前面有兩個固定按鈕(讀取/匯出) 修正: 這裡是動態生成的，選擇器要精準
-                   // 這裡簡化：直接操作 class
-                }
+        function switchTab(idx) {
+            document.querySelectorAll('.table-page').forEach((p, i) => {
+                p.classList.toggle('hidden', i !== idx);
             });
-            // 由於 btn-soft 類別也用於頂部按鈕，我們改用 id 或父層查找較安全，但這邊用簡單的遍歷顯示隱藏
-            const pages = document.querySelectorAll('.table-page');
-            pages.forEach((page, idx) => {
-                if (idx === index) {
-                    page.classList.remove('hidden');
-                } else {
-                    page.classList.add('hidden');
-                }
-            });
-            
-            // 更新按鈕樣式
-            const tabContainer = document.querySelector('#schedule-container > div.flex');
-            if(tabContainer) {
-                Array.from(tabContainer.children).forEach((btn, idx) => {
-                    if(idx === index) btn.classList.add('active');
-                    else btn.classList.remove('active');
-                });
-            }
         }
 
         function updateCharts(data, h, p, c) {
@@ -398,51 +503,95 @@
             if(scheduleChart) scheduleChart.destroy();
             if(pieChart) pieChart.destroy();
 
-            const ctxLine = document.getElementById('scheduleChart').getContext('2d');
-            scheduleChart = new Chart(ctxLine, {
+            scheduleChart = new Chart(document.getElementById('scheduleChart'), {
                 type: 'line',
                 data: { labels, datasets: [{ label: '月支出', data: dataset, borderColor: '#8C7051', backgroundColor: 'rgba(140, 112, 81, 0.1)', fill: true, tension: 0.4 }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
             });
 
-            const ctxPie = document.getElementById('pieChart').getContext('2d');
-            pieChart = new Chart(ctxPie, {
+            pieChart = new Chart(document.getElementById('pieChart'), {
                 type: 'doughnut',
                 data: { labels: ['房貸', '信貸', '車貸'], datasets: [{ data: [h, p, c], backgroundColor: ['#D97706', '#65A30D', '#EA580C'], borderWidth: 0 }] },
                 options: { cutout: '60%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
+            
+            document.getElementById('pie-legend').innerHTML = `
+                <span class="text-accent-house">● 房貸 $${fmt(h)}</span> 
+                <span class="text-accent-credit ml-2">● 信貸 $${fmt(p)}</span>
+                <span class="text-accent-car ml-2">● 車貸 $${fmt(c)}</span>
+            `;
         }
 
-        function exportData() {
+        // --- 功能：自動儲存 ---
+        function saveToLocal() {
             const data = {
                 h: { amt: document.getElementById('h-amt').value, rate: document.getElementById('h-rate').value, yr: document.getElementById('h-year').value, grace: document.getElementById('h-grace').value },
+                pre: { yr: document.getElementById('h-pre-yr').value, amt: document.getElementById('h-pre-amt').value },
                 p: { amt: document.getElementById('p-amt').value, rate: document.getElementById('p-rate').value, yr: document.getElementById('p-year').value },
                 c: { amt: document.getElementById('c-amt').value, rate: document.getElementById('c-rate').value, yr: document.getElementById('c-year').value },
                 income: document.getElementById('income').value,
                 startMonth: document.getElementById('start-month').value
             };
+            localStorage.setItem('wucj_loan_data', JSON.stringify(data));
+            
+            const toast = document.getElementById('auto-save-toast');
+            toast.style.opacity = '1';
+            setTimeout(() => toast.style.opacity = '0', 2000);
+        }
+
+        function loadFromLocal() {
+            const raw = localStorage.getItem('wucj_loan_data');
+            if (!raw) return;
+            try {
+                const d = JSON.parse(raw);
+                if(d.h) { document.getElementById('h-amt').value = d.h.amt; document.getElementById('h-rate').value = d.h.rate; document.getElementById('h-year').value = d.h.yr; document.getElementById('h-grace').value = d.h.grace; }
+                if(d.pre) { document.getElementById('h-pre-yr').value = d.pre.yr; document.getElementById('h-pre-amt').value = d.pre.amt; }
+                if(d.p) { document.getElementById('p-amt').value = d.p.amt; document.getElementById('p-rate').value = d.p.rate; document.getElementById('p-year').value = d.p.yr; }
+                if(d.c) { document.getElementById('c-amt').value = d.c.amt; document.getElementById('c-rate').value = d.c.rate; document.getElementById('c-year').value = d.c.yr; }
+                if(d.income) document.getElementById('income').value = d.income;
+                if(d.startMonth) document.getElementById('start-month').value = d.startMonth;
+            } catch(e) { console.log('Load error', e); }
+        }
+
+        // --- 功能：生成 IG 卡片 ---
+        function generateShareCard() {
+            window.scrollTo(0, 0); // 確保截圖時不會跑版
+            const card = document.getElementById('share-card-canvas');
+            
+            html2canvas(card, { scale: 1 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'WUCJ_Finance_Plan.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        // --- 功能：匯入匯出 ---
+        function exportData() {
+            const raw = localStorage.getItem('wucj_loan_data');
+            if(!raw) { alert('尚無資料可儲存'); return; }
             const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type: "application/json"}));
-            a.download = "loan_config_wucj.json"; a.click();
+            a.href = URL.createObjectURL(new Blob([raw], {type: "application/json"}));
+            a.download = "loan_backup_wucj.json"; a.click();
         }
 
         function importData(input) {
             const file = input.files[0]; if(!file) return;
             const r = new FileReader();
             r.onload = (e) => {
-                try {
-                    const d = JSON.parse(e.target.result);
-                    document.getElementById('h-amt').value = d.h.amt; document.getElementById('h-rate').value = d.h.rate; document.getElementById('h-year').value = d.h.yr; document.getElementById('h-grace').value = d.h.grace;
-                    document.getElementById('p-amt').value = d.p.amt; document.getElementById('p-rate').value = d.p.rate; document.getElementById('p-year').value = d.p.yr;
-                    document.getElementById('c-amt').value = d.c.amt; document.getElementById('c-rate').value = d.c.rate; document.getElementById('c-year').value = d.c.yr;
-                    document.getElementById('income').value = d.income; document.getElementById('start-month').value = d.startMonth;
-                    calculateAll();
-                } catch(err) {}
+                localStorage.setItem('wucj_loan_data', e.target.result);
+                loadFromLocal();
+                calculateAll();
+                alert('讀取成功！');
             }; r.readAsText(file);
         }
 
+        // 啟動
         document.querySelectorAll('input').forEach(el => el.addEventListener('input', calculateAll));
-        window.onload = calculateAll;
+        window.onload = function() {
+            loadFromLocal();
+            calculateAll();
+        }
     </script>
 </body>
 </html>

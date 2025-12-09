@@ -3,237 +3,516 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>綜合貸款計算器 (房貸/信貸/車貸)</title>
-    <!-- 引入 Tailwind CSS 進行快速排版 -->
+    <title>溫馨理財｜全方位貸款計算機 - WUCJ</title>
+    <!-- 引入 Tailwind CSS 與 Google Fonts (圓體) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Chart.js 進行圖表繪製 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Zen Maru Gothic"', '"Microsoft JhengHei"', 'sans-serif'],
+                    },
+                    colors: {
+                        cream: '#FFFBF5',
+                        warm: {
+                            50: '#FAF7F2',
+                            100: '#F5EFE6',
+                            200: '#E6DCC9',
+                            500: '#B89F7D',
+                            600: '#8C7051',
+                            800: '#5D4037',
+                        },
+                        accent: {
+                            house: '#D97706',   /* 溫暖琥珀 */
+                            credit: '#65A30D',  /* 抹茶綠 */
+                            car: '#EA580C'      /* 陶瓦紅 */
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f3f4f6; }
-        .input-group label { display: block; font-size: 0.875rem; color: #4b5563; margin-bottom: 0.25rem; }
-        .input-group input { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; }
-        .result-card { transition: all 0.3s; }
-        .result-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        body { background-color: #FFFBF5; color: #5D4037; }
+        
+        /* 自定義溫馨按鈕 */
+        .btn-warm { 
+            background-color: #D97706; 
+            color: white; 
+            padding: 0.5rem 1rem; 
+            border-radius: 9999px; /* 圓角 */
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.2);
+        }
+        .btn-warm:hover { background-color: #B45309; transform: translateY(-1px); }
+        
+        .btn-soft {
+            background-color: #FFF;
+            border: 2px solid #E6DCC9;
+            color: #8C7051;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            transition: all 0.3s;
+        }
+        .btn-soft:hover { background-color: #F5EFE6; border-color: #B89F7D; }
+
+        /* 輸入框樣式 */
+        .input-warm {
+            background-color: #FFF;
+            border: 1px solid #E6DCC9;
+            border-radius: 0.75rem;
+            padding: 0.5rem;
+            width: 100%;
+            color: #5D4037;
+            transition: border-color 0.3s;
+        }
+        .input-warm:focus { outline: none; border-color: #D97706; ring: 2px solid #FEF3C7; }
+
+        /* 卡片柔和陰影 */
+        .card-warm {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(93, 64, 55, 0.05);
+            border: 1px solid #F5EFE6;
+        }
+
+        /* 列印設定：確保轉 PDF 時乾淨 */
+        @media print {
+            body { background-color: white; color: black; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .card-warm { box-shadow: none; border: 1px solid #eee; margin-bottom: 20px; page-break-inside: avoid; }
+            .page-break { page-break-before: always; }
+            /* 強制背景色列印 */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
     </style>
 </head>
-<body class="p-6">
+<body class="p-4 sm:p-6 min-h-screen">
 
-    <div class="max-w-6xl mx-auto">
-        <header class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-gray-800">全方位貸款支出計算器</h1>
-            <p class="text-gray-500 mt-2">整合房貸、信貸、車貸，一鍵計算每月現金流壓力</p>
-        </header>
+    <!-- 頂部導航 -->
+    <nav class="max-w-7xl mx-auto flex justify-between items-center mb-8 no-print pt-2">
+        <div class="flex items-center gap-3">
+            <div class="bg-orange-100 p-2 rounded-full text-2xl">🏡</div>
+            <h1 class="text-2xl font-bold text-warm-800 tracking-wider">貸款計算機</h1>
+        </div>
+        <a href="https://vocus.cc/user/@WUCJ" target="_blank" class="flex items-center gap-2 text-warm-600 hover:text-accent-house transition font-medium text-sm sm:text-base">
+            <img src="https://ui-avatars.com/api/?name=WUCJ&background=B45309&color=fff" class="w-8 h-8 rounded-full shadow-sm">
+            <span>追蹤 WUCJ</span>
+        </a>
+    </nav>
 
-        <!-- 主要內容區：左側輸入，右側總結 -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- 主容器 -->
+    <div class="max-w-7xl mx-auto space-y-8">
+        
+        <!-- 工具列 -->
+        <div class="flex flex-wrap justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-warm-100 no-print">
+            <div class="space-x-2 mb-2 sm:mb-0">
+                <button onclick="document.getElementById('importFile').click()" class="btn-soft text-sm">
+                    <i class="fas fa-folder-open"></i> 讀取舊檔
+                </button>
+                <button onclick="exportData()" class="btn-soft text-sm">
+                    <i class="fas fa-save"></i> 儲存設定
+                </button>
+                <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(this)">
+            </div>
+            <div>
+                <!-- 這裡就是生成 PDF 的觸發點 -->
+                <button onclick="window.print()" class="btn-warm text-sm font-bold flex items-center gap-2">
+                    <i class="fas fa-print"></i> 一鍵列印 / 另存 PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- 列印時的標頭 (螢幕隱藏) -->
+        <div class="hidden print-only text-center mb-8 border-b-2 border-warm-200 pb-4">
+            <h1 class="text-3xl font-bold text-warm-800">個人財務貸款試算報告</h1>
+            <p class="text-warm-600 mt-1">Generated by WUCJ 貸款計算機</p>
+        </div>
+
+        <!-- 輸入區塊 (三欄式設計) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 no-print">
             
-            <!-- 左側：輸入區塊 -->
-            <div class="lg:col-span-2 space-y-6">
-                
-                <!-- 房貸區塊 -->
-                <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
-                    <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                        <span class="bg-blue-100 text-blue-600 p-2 rounded-full mr-2">🏠</span> 房屋貸款
-                    </h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="input-group">
-                            <label>貸款金額 (萬元)</label>
-                            <input type="number" id="house-amount" value="1000" oninput="calculate()">
-                        </div>
-                        <div class="input-group">
-                            <label>年利率 (%)</label>
-                            <input type="number" id="house-rate" value="2.1" step="0.01" oninput="calculate()">
-                        </div>
-                        <div class="input-group">
-                            <label>貸款期限 (年)</label>
-                            <input type="number" id="house-years" value="30" oninput="calculate()">
-                        </div>
-                    </div>
-                    <div class="mt-3 text-sm text-blue-600 font-semibold" id="house-result">每月: $0</div>
+            <!-- 房貸卡片 -->
+            <div class="card-warm p-6 border-t-4 border-amber-500 relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 text-amber-50 opacity-50 text-9xl pointer-events-none rotate-12">
+                    <i class="fas fa-home"></i>
                 </div>
-
-                <!-- 信貸區塊 -->
-                <div class="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
-                    <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                        <span class="bg-green-100 text-green-600 p-2 rounded-full mr-2">💳</span> 信用貸款
-                    </h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="input-group">
-                            <label>貸款金額 (萬元)</label>
-                            <input type="number" id="personal-amount" value="0" oninput="calculate()">
-                        </div>
-                        <div class="input-group">
-                            <label>年利率 (%)</label>
-                            <input type="number" id="personal-rate" value="3.5" step="0.01" oninput="calculate()">
-                        </div>
-                        <div class="input-group">
-                            <label>貸款期限 (年)</label>
-                            <input type="number" id="personal-years" value="7" oninput="calculate()">
-                        </div>
+                <h3 class="font-bold text-lg mb-5 text-warm-800 flex items-center">
+                    <span class="w-2 h-8 bg-amber-500 rounded-full mr-3"></span>房屋貸款
+                </h3>
+                <div class="space-y-4 relative z-10">
+                    <div><label class="text-xs text-warm-600 ml-1">貸款金額 (萬元)</label><input type="number" id="h-amt" class="input-warm" value="1000"></div>
+                    <div class="flex gap-4">
+                        <div class="w-1/2"><label class="text-xs text-warm-600 ml-1">年利率 (%)</label><input type="number" id="h-rate" class="input-warm" value="2.1" step="0.01"></div>
+                        <div class="w-1/2"><label class="text-xs text-warm-600 ml-1">期限 (年)</label><input type="number" id="h-year" class="input-warm" value="30"></div>
                     </div>
-                    <div class="mt-3 text-sm text-green-600 font-semibold" id="personal-result">每月: $0</div>
-                </div>
-
-                <!-- 車貸區塊 -->
-                <div class="bg-white p-6 rounded-lg shadow border-l-4 border-orange-500">
-                    <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                        <span class="bg-orange-100 text-orange-600 p-2 rounded-full mr-2">🚗</span> 汽車貸款
-                    </h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="input-group">
-                            <label>貸款金額 (萬元)</label>
-                            <input type="number" id="car-amount" value="0" oninput="calculate()">
-                        </div>
-                        <div class="input-group">
-                            <label>年利率 (%)</label>
-                            <input type="number" id="car-rate" value="4.0" step="0.01" oninput="calculate()">
-                        </div>
-                        <div class="input-group">
-                            <label>貸款期限 (年)</label>
-                            <input type="number" id="car-years" value="5" oninput="calculate()">
-                        </div>
-                    </div>
-                    <div class="mt-3 text-sm text-orange-600 font-semibold" id="car-result">每月: $0</div>
+                    <div><label class="text-xs text-warm-600 ml-1">寬限期 (只繳息年數)</label><input type="number" id="h-grace" class="input-warm bg-orange-50" value="0"></div>
                 </div>
             </div>
 
-            <!-- 右側：總結儀表板 -->
-            <div class="lg:col-span-1 space-y-6">
-                <!-- 結果卡片 -->
-                <div class="bg-gray-800 text-white p-6 rounded-lg shadow-lg result-card">
-                    <h3 class="text-lg font-semibold text-gray-300 mb-2">每月總現金支出</h3>
-                    <div class="text-4xl font-bold text-yellow-400" id="total-monthly">$0</div>
-                    <div class="mt-4 border-t border-gray-600 pt-4">
-                        <div class="flex justify-between mb-2">
-                            <span class="text-gray-400">每年總支出</span>
-                            <span class="font-bold" id="total-yearly">$0</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-400">總利息支出 (預估)</span>
-                            <span class="font-bold text-red-300" id="total-interest">$0</span>
-                        </div>
+            <!-- 信貸卡片 -->
+            <div class="card-warm p-6 border-t-4 border-lime-600 relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 text-lime-50 opacity-50 text-9xl pointer-events-none rotate-12">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <h3 class="font-bold text-lg mb-5 text-warm-800 flex items-center">
+                    <span class="w-2 h-8 bg-lime-600 rounded-full mr-3"></span>信用貸款
+                </h3>
+                <div class="space-y-4 relative z-10">
+                    <div><label class="text-xs text-warm-600 ml-1">貸款金額 (萬元)</label><input type="number" id="p-amt" class="input-warm" value="0"></div>
+                    <div class="flex gap-4">
+                        <div class="w-1/2"><label class="text-xs text-warm-600 ml-1">年利率 (%)</label><input type="number" id="p-rate" class="input-warm" value="3.5" step="0.01"></div>
+                        <div class="w-1/2"><label class="text-xs text-warm-600 ml-1">期限 (年)</label><input type="number" id="p-year" class="input-warm" value="7"></div>
                     </div>
                 </div>
+            </div>
 
-                <!-- 圖表區 -->
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <h4 class="text-center font-bold text-gray-700 mb-2">每月還款佔比</h4>
-                    <canvas id="loanChart"></canvas>
+            <!-- 車貸卡片 -->
+            <div class="card-warm p-6 border-t-4 border-orange-600 relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 text-orange-50 opacity-50 text-9xl pointer-events-none rotate-12">
+                    <i class="fas fa-car-side"></i>
+                </div>
+                <h3 class="font-bold text-lg mb-5 text-warm-800 flex items-center">
+                    <span class="w-2 h-8 bg-orange-600 rounded-full mr-3"></span>汽車貸款
+                </h3>
+                <div class="space-y-4 relative z-10">
+                    <div><label class="text-xs text-warm-600 ml-1">貸款金額 (萬元)</label><input type="number" id="c-amt" class="input-warm" value="0"></div>
+                    <div class="flex gap-4">
+                        <div class="w-1/2"><label class="text-xs text-warm-600 ml-1">年利率 (%)</label><input type="number" id="c-rate" class="input-warm" value="4.0" step="0.01"></div>
+                        <div class="w-1/2"><label class="text-xs text-warm-600 ml-1">期限 (年)</label><input type="number" id="c-year" class="input-warm" value="5"></div>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- 收入與警示 (獨立一排) -->
+        <div class="card-warm p-6 bg-warm-50 border border-warm-200 no-print">
+            <div class="flex flex-col md:flex-row items-center gap-6">
+                <div class="w-full md:w-1/3">
+                    <label class="font-bold text-warm-800"><i class="fas fa-wallet mr-2"></i>月收入試算 (元)</label>
+                    <input type="number" id="income" class="input-warm mt-2 text-lg font-bold text-right" value="60000" placeholder="輸入月薪">
+                </div>
+                <div class="w-full md:w-2/3">
+                    <div id="dti-msg" class="hidden p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm">
+                        <div class="font-bold mb-1 flex items-center"><i class="fas fa-exclamation-circle mr-2"></i> 注意：負債比過高</div>
+                        您的月付金已超過月收入的 60%，建議您重新檢視貸款結構。
+                        <a href="https://vocus.cc/user/@WUCJ" target="_blank" class="underline font-bold ml-1 hover:text-rose-600">👉 點此看作者的優化建議</a>
+                    </div>
+                    <div id="dti-ok" class="hidden p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm flex items-center">
+                         <i class="fas fa-check-circle mr-2 text-xl"></i> 
+                         <span>財務狀況健康！負債比在安全範圍內。</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 報表顯示區 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- 圓餅圖 -->
+            <div class="card-warm p-6 flex flex-col items-center">
+                <h4 class="text-warm-600 font-bold mb-4">月付金結構分析</h4>
+                <div class="w-48 h-48 relative">
+                    <canvas id="pieChart"></canvas>
+                    <!-- 中間顯示總金額 -->
+                    <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
+                        <span class="text-xs text-gray-400">月付總額</span>
+                        <span class="font-bold text-lg text-warm-800" id="center-total">$0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 數據總覽 -->
+            <div class="md:col-span-2 card-warm p-6">
+                <h4 class="text-warm-600 font-bold mb-4 border-b border-warm-100 pb-2">財務預測摘要</h4>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mb-6">
+                    <div class="p-4 bg-orange-50 rounded-xl">
+                        <div class="text-xs text-warm-500 mb-1">每月總支出</div>
+                        <div class="text-xl font-bold text-accent-house" id="res-monthly">$0</div>
+                    </div>
+                    <div class="p-4 bg-stone-50 rounded-xl">
+                        <div class="text-xs text-warm-500 mb-1">每年支出</div>
+                        <div class="text-xl font-bold text-warm-800" id="res-yearly">$0</div>
+                    </div>
+                    <div class="p-4 bg-stone-50 rounded-xl">
+                        <div class="text-xs text-warm-500 mb-1">總利息支出</div>
+                        <div class="text-xl font-bold text-warm-600" id="res-interest">$0</div>
+                    </div>
+                    <div class="p-4 bg-lime-50 rounded-xl">
+                        <div class="text-xs text-warm-500 mb-1">負債比 (DTI)</div>
+                        <div class="text-xl font-bold text-accent-credit" id="res-dti">0%</div>
+                    </div>
+                </div>
+                <!-- 線圖 -->
+                <div class="h-48">
+                    <canvas id="scheduleChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 詳細表格 -->
+        <div class="card-warm overflow-hidden">
+            <div class="p-4 bg-warm-100 border-b border-warm-200 flex justify-between items-center">
+                <h3 class="font-bold text-warm-800"><i class="fas fa-list-ul mr-2"></i>還款計畫表 (預覽前 10 年)</h3>
+                <span class="text-xs text-warm-500 hidden sm:inline">完整資料請使用列印或匯出</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-warm-50 text-warm-600">
+                        <tr>
+                            <th class="p-3 pl-6">期數</th>
+                            <th class="p-3">年份</th>
+                            <th class="p-3 text-right">本月應繳</th>
+                            <th class="p-3 text-right text-warm-400">利息</th>
+                            <th class="p-3 text-right text-warm-400">本金</th>
+                            <th class="p-3 text-right pr-6">剩餘本金</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detail-table-body" class="divide-y divide-warm-100 text-warm-700">
+                        <!-- JS 填入 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 頁尾 -->
+        <footer class="text-center text-warm-500 text-sm py-8 print-only-footer">
+            <p class="mb-2">理財規劃・貸款試算・生活投資</p>
+            <a href="https://vocus.cc/user/@WUCJ" target="_blank" class="inline-block px-4 py-2 rounded-full bg-white border border-warm-200 hover:bg-warm-50 transition">
+                更多文章請至 <strong class="text-accent-house">WUCJ 的方格子</strong>
+            </a>
+            <p class="text-xs mt-4 opacity-60">計算結果僅供參考，實際還款金額以銀行合約為準。</p>
+        </footer>
+
     </div>
 
     <script>
-        let loanChart;
+        let scheduleChart, pieChart;
+        const fmt = (n) => Math.round(n).toLocaleString();
 
-        // 初始化圖表
-        function initChart() {
-            const ctx = document.getElementById('loanChart').getContext('2d');
-            loanChart = new Chart(ctx, {
-                type: 'doughnut',
+        // 貸款類別 (核心邏輯不變，僅配色與資料整合)
+        class Loan {
+            constructor(amountWan, rate, years, graceYears = 0) {
+                this.principal = amountWan * 10000;
+                this.rate = rate / 100 / 12;
+                this.periods = years * 12;
+                this.gracePeriods = graceYears * 12;
+            }
+            getSchedule() {
+                let schedule = [];
+                let balance = this.principal;
+                let amortizePeriods = this.periods - this.gracePeriods;
+                let pmt = 0;
+
+                if (amortizePeriods > 0 && this.rate > 0) {
+                    pmt = (this.principal * this.rate * Math.pow(1 + this.rate, amortizePeriods)) / (Math.pow(1 + this.rate, amortizePeriods) - 1);
+                } else if (amortizePeriods > 0 && this.rate === 0) {
+                    pmt = this.principal / amortizePeriods;
+                }
+
+                for (let i = 1; i <= this.periods; i++) {
+                    let interest = balance * this.rate;
+                    let payment = (i <= this.gracePeriods) ? interest : pmt;
+                    let principalPaid = payment - interest;
+                    
+                    if (i > this.gracePeriods) {
+                        if (balance - principalPaid < 10) { principalPaid = balance; payment = principalPaid + interest; }
+                    } else {
+                        principalPaid = 0;
+                    }
+
+                    balance -= principalPaid;
+                    if (balance < 0) balance = 0;
+
+                    schedule.push({ month: i, payment, interest, principal: principalPaid, balance });
+                }
+                return schedule;
+            }
+        }
+
+        function calculateAll() {
+            // 讀取數據
+            const inputs = {
+                h: { amt: +document.getElementById('h-amt').value, rate: +document.getElementById('h-rate').value, yr: +document.getElementById('h-year').value, grace: +document.getElementById('h-grace').value },
+                p: { amt: +document.getElementById('p-amt').value, rate: +document.getElementById('p-rate').value, yr: +document.getElementById('p-year').value },
+                c: { amt: +document.getElementById('c-amt').value, rate: +document.getElementById('c-rate').value, yr: +document.getElementById('c-year').value },
+                income: +document.getElementById('income').value
+            };
+
+            const loanH = new Loan(inputs.h.amt, inputs.h.rate, inputs.h.yr, inputs.h.grace);
+            const loanP = new Loan(inputs.p.amt, inputs.p.rate, inputs.p.yr);
+            const loanC = new Loan(inputs.c.amt, inputs.c.rate, inputs.c.yr);
+
+            const sH = loanH.getSchedule();
+            const sP = loanP.getSchedule();
+            const sC = loanC.getSchedule();
+
+            const maxMonths = Math.max(sH.length, sP.length, sC.length);
+            let combined = [];
+            let totalInterest = 0;
+
+            for (let i = 0; i < maxMonths; i++) {
+                const h = sH[i] || { payment: 0, interest: 0, principal: 0, balance: 0 };
+                const p = sP[i] || { payment: 0, interest: 0, principal: 0, balance: 0 };
+                const c = sC[i] || { payment: 0, interest: 0, principal: 0, balance: 0 };
+
+                let rowPay = h.payment + p.payment + c.payment;
+                let rowInt = h.interest + p.interest + c.interest;
+                let rowPrin = h.principal + p.principal + c.principal;
+                let rowBal = h.balance + p.balance + c.balance;
+
+                totalInterest += rowInt;
+                combined.push({ month: i+1, payment: rowPay, interest: rowInt, principal: rowPrin, balance: rowBal });
+            }
+
+            // 更新 UI
+            const firstMonth = combined.length > 0 ? combined[0].payment : 0;
+            document.getElementById('res-monthly').innerText = '$' + fmt(firstMonth);
+            document.getElementById('res-yearly').innerText = '$' + fmt(firstMonth * 12);
+            document.getElementById('res-interest').innerText = '$' + fmt(totalInterest);
+            document.getElementById('center-total').innerText = '$' + fmt(firstMonth);
+
+            // DTI
+            const dti = inputs.income > 0 ? (firstMonth / inputs.income * 100) : 0;
+            document.getElementById('res-dti').innerText = dti.toFixed(1) + '%';
+            
+            const warnBox = document.getElementById('dti-msg');
+            const okBox = document.getElementById('dti-ok');
+            if(dti > 60) {
+                warnBox.classList.remove('hidden');
+                okBox.classList.add('hidden');
+                document.getElementById('res-dti').classList.add('text-rose-600');
+            } else {
+                warnBox.classList.add('hidden');
+                okBox.classList.remove('hidden');
+                document.getElementById('res-dti').classList.remove('text-rose-600');
+            }
+
+            // 表格
+            const tbody = document.getElementById('detail-table-body');
+            tbody.innerHTML = '';
+            combined.slice(0, 120).forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-orange-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 pl-6">${row.month}</td>
+                    <td class="p-3 text-warm-400">第 ${Math.ceil(row.month/12)} 年</td>
+                    <td class="p-3 text-right font-bold text-warm-800">$${fmt(row.payment)}</td>
+                    <td class="p-3 text-right text-warm-500 text-xs">$${fmt(row.interest)}</td>
+                    <td class="p-3 text-right text-warm-500 text-xs">$${fmt(row.principal)}</td>
+                    <td class="p-3 text-right pr-6 text-warm-400">$${fmt(row.balance)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // 圖表更新 (配色採用暖色系)
+            updateCharts(combined, (sH[0]?.payment||0), (sP[0]?.payment||0), (sC[0]?.payment||0));
+        }
+
+        function updateCharts(data, h, p, c) {
+            // 線圖資料
+            let labels = [];
+            let dataset = [];
+            for(let i=0; i<data.length; i+=12) {
+                labels.push(`第${Math.ceil((i+1)/12)}年`);
+                dataset.push(data[i].payment);
+            }
+
+            // 銷毀舊圖表
+            if(scheduleChart) scheduleChart.destroy();
+            if(pieChart) pieChart.destroy();
+
+            // 建立線圖 (暖棕色系)
+            const ctxLine = document.getElementById('scheduleChart').getContext('2d');
+            scheduleChart = new Chart(ctxLine, {
+                type: 'line',
                 data: {
-                    labels: ['房貸', '信貸', '車貸'],
+                    labels: labels,
                     datasets: [{
-                        data: [0, 0, 0],
-                        backgroundColor: ['#3b82f6', '#22c55e', '#f97316'],
-                        borderWidth: 0
+                        label: '每月支出趨勢',
+                        data: dataset,
+                        borderColor: '#8C7051', // 暖棕
+                        backgroundColor: 'rgba(140, 112, 81, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#D97706'
                     }]
                 },
                 options: {
                     responsive: true,
-                    plugins: {
-                        legend: { position: 'bottom' }
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#F5EFE6' }, ticks: { color: '#8C7051' } },
+                        x: { grid: { display: false }, ticks: { color: '#8C7051' } }
                     }
+                }
+            });
+
+            // 建立圓餅圖 (大地色系)
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+            pieChart = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['房貸', '信貸', '車貸'],
+                    datasets: [{
+                        data: [h, p, c],
+                        backgroundColor: ['#D97706', '#65A30D', '#EA580C'], // 琥珀, 抹茶, 陶瓦
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    cutout: '70%',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, color: '#5D4037' } } }
                 }
             });
         }
 
-        // PMT 公式：本息平均攤還
-        // P: 貸款總額, r: 月利率, n: 總期數(月)
-        function calculatePMT(P, annualRate, years) {
-            if (P <= 0 || years <= 0) return { monthly: 0, total: 0, interest: 0 };
-            
-            let r = (annualRate / 100) / 12; // 月利率
-            let n = years * 12; // 總月數
-
-            // 如果利率為 0
-            if (r === 0) {
-                let monthly = (P * 10000) / n;
-                return {
-                    monthly: monthly,
-                    total: P * 10000,
-                    interest: 0
-                };
-            }
-
-            let monthlyPayment = (P * 10000 * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-            let totalPayment = monthlyPayment * n;
-            let totalInterest = totalPayment - (P * 10000);
-
-            return {
-                monthly: monthlyPayment,
-                total: totalPayment,
-                interest: totalInterest
+        function exportData() {
+            const data = {
+                hAmt: document.getElementById('h-amt').value, hRate: document.getElementById('h-rate').value, hYear: document.getElementById('h-year').value, hGrace: document.getElementById('h-grace').value,
+                pAmt: document.getElementById('p-amt').value, pRate: document.getElementById('p-rate').value, pYear: document.getElementById('p-year').value,
+                cAmt: document.getElementById('c-amt').value, cRate: document.getElementById('c-rate').value, cYear: document.getElementById('c-year').value,
+                income: document.getElementById('income').value
             };
+            const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = "loan_warm_wucj.json";
+            a.click();
         }
 
-        function formatMoney(num) {
-            return '$' + Math.round(num).toLocaleString();
+        function importData(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const d = JSON.parse(e.target.result);
+                    document.getElementById('h-amt').value = d.hAmt||0; document.getElementById('h-rate').value = d.hRate||0; document.getElementById('h-year').value = d.hYear||0; document.getElementById('h-grace').value = d.hGrace||0;
+                    document.getElementById('p-amt').value = d.pAmt||0; document.getElementById('p-rate').value = d.pRate||0; document.getElementById('p-year').value = d.pYear||0;
+                    document.getElementById('c-amt').value = d.cAmt||0; document.getElementById('c-rate').value = d.cRate||0; document.getElementById('c-year').value = d.cYear||0;
+                    document.getElementById('income').value = d.income||0;
+                    calculateAll();
+                } catch(err) { alert('檔案格式不符'); }
+            };
+            reader.readAsText(file);
         }
 
-        function calculate() {
-            // 取得輸入值
-            const hAmount = parseFloat(document.getElementById('house-amount').value) || 0;
-            const hRate = parseFloat(document.getElementById('house-rate').value) || 0;
-            const hYears = parseFloat(document.getElementById('house-years').value) || 0;
-
-            const pAmount = parseFloat(document.getElementById('personal-amount').value) || 0;
-            const pRate = parseFloat(document.getElementById('personal-rate').value) || 0;
-            const pYears = parseFloat(document.getElementById('personal-years').value) || 0;
-
-            const cAmount = parseFloat(document.getElementById('car-amount').value) || 0;
-            const cRate = parseFloat(document.getElementById('car-rate').value) || 0;
-            const cYears = parseFloat(document.getElementById('car-years').value) || 0;
-
-            // 計算個別貸款
-            const house = calculatePMT(hAmount, hRate, hYears);
-            const personal = calculatePMT(pAmount, pRate, pYears);
-            const car = calculatePMT(cAmount, cRate, cYears);
-
-            // 更新個別顯示
-            document.getElementById('house-result').innerText = `每月攤還: ${formatMoney(house.monthly)} | 總利息: ${formatMoney(house.interest)}`;
-            document.getElementById('personal-result').innerText = `每月攤還: ${formatMoney(personal.monthly)} | 總利息: ${formatMoney(personal.interest)}`;
-            document.getElementById('car-result').innerText = `每月攤還: ${formatMoney(car.monthly)} | 總利息: ${formatMoney(car.interest)}`;
-
-            // 計算總和
-            const totalMonthly = house.monthly + personal.monthly + car.monthly;
-            const totalYearly = totalMonthly * 12;
-            const totalInterestAll = house.interest + personal.interest + car.interest;
-
-            // 更新總結儀表板
-            document.getElementById('total-monthly').innerText = formatMoney(totalMonthly);
-            document.getElementById('total-yearly').innerText = formatMoney(totalYearly);
-            document.getElementById('total-interest').innerText = formatMoney(totalInterestAll);
-
-            // 更新圖表
-            if (loanChart) {
-                loanChart.data.datasets[0].data = [house.monthly, personal.monthly, car.monthly];
-                
-                // 如果全部都是0，顯示一個灰色的圈圈避免圖表消失（選擇性）
-                if (totalMonthly === 0) {
-                   // loanChart.data.datasets[0].data = [1, 1, 1]; // 僅作示意，實際可隱藏
-                }
-                loanChart.update();
-            }
-        }
-
-        // 頁面加載後初始化
-        window.onload = function() {
-            initChart();
-            calculate();
-        };
-
+        document.querySelectorAll('input').forEach(el => el.addEventListener('input', calculateAll));
+        window.onload = calculateAll;
     </script>
 </body>
 </html>
